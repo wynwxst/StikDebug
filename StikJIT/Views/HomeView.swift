@@ -147,17 +147,17 @@ class InstalledAppsViewModel: ObservableObject {
             return
         }
         
-        if output.hasPrefix("{\"error\":") {
-            self.apps = [:]
-        }
-        
         print(output)
 
         // Decode the JSON into a Swift dictionary
         do {
             let decoder = JSONDecoder()
             let apps = try decoder.decode([String: String].self, from: jsonData)
-            self.apps = apps
+            if let app = apps.first, app.key == "error" {
+                self.apps = [:]
+            } else {
+                self.apps = apps
+            }
             return
         } catch {
             print("Error: Failed to decode JSON - \(error)")
