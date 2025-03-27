@@ -11,15 +11,17 @@ import em_proxy
 @main
 struct HeartbeatApp: App {
     @State private var isLoading = true
+    @State private var heartBeat = false
 
     var body: some Scene {
         WindowGroup {
             if isLoading {
                 LoadingView()
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            withAnimation(.easeInOut(duration: 1.0)) {
+                        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                            if heartBeat {
                                 isLoading = false
+                                timer.invalidate()
                             }
                         }
                         startProxy()
@@ -50,16 +52,58 @@ struct HeartbeatApp: App {
             }
         }
     }
+    
+    func startHeartbeatInBackground() {
+        let heartBeat = Thread {
+            let cCompletionHandler: @convention(block) (Int32, UnsafePointer<CChar>?) -> Void = { result, messagePointer in
+                let message: String? = messagePointer != nil ? String(cString: messagePointer!) : nil
+
+                if result == 0 {
+                    print("Heartbeat started successfully: \(message ?? "")")
+                    
+                    self.heartBeat = true
+                } else {
+                    print("Error: \(message ?? "") (Code: \(result))")
+                    
+                    showAlert(title: "HeartBeat Error", message: "\(message ?? "") (\(result))", showOk: true) { _ in
+                        startHeartbeatInBackground()
+                    }
+                    
+                }
+            }
+            
+            startHeartbeat(cCompletionHandler)
+        }
+        
+        heartBeat.qualityOfService = .background
+        heartBeat.name = "HeartBeat"
+        heartBeat.start()
+    }
+
 }
 
 
 func startHeartbeatInBackground() {
     let heartBeat = Thread {
-        startHeartbeat()
+        let cCompletionHandler: @convention(block) (Int32, UnsafePointer<CChar>?) -> Void = { result, messagePointer in
+            let message: String? = messagePointer != nil ? String(cString: messagePointer!) : nil
+
+            if result == 0 {
+                print("Heartbeat started successfully: \(message ?? "")")
+            } else {
+                print("Error: \(message ?? "") (Code: \(result))")
+                
+                showAlert(title: "HeartBeat Error", message: "\(message ?? "") (\(result))", showOk: true) { _ in
+                    startHeartbeatInBackground()
+                }
+            }
+        }
+        
+        startHeartbeat(cCompletionHandler)
     }
     
     heartBeat.qualityOfService = .background
-    heartBeat.name = "HeartBeat"
+    heartBeat.name = "Heartbeat"
     heartBeat.start()
 }
 
@@ -103,6 +147,26 @@ struct LoadingView: View {
                     .opacity(animate ? 1.0 : 0.5)
                     .animation(Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: animate)
             }
+        }
+    }
+}
+
+public func showAlert(title: String, message: String, showOk: Bool, completion: @escaping (Bool) -> Void) {
+    DispatchQueue.main.async {
+        if let mainWindow = UIApplication.shared.windows.last {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            
+             if showOk {
+                let okAction = UIAlertAction(title: "OK", style: .default) { _ in
+                    completion(true)
+                }
+
+                alert.addAction(okAction)
+            } else {
+                completion(false)
+            }
+            
+            mainWindow.rootViewController?.present(alert, animated: true, completion: nil)
         }
     }
 }
