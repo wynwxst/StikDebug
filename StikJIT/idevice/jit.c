@@ -14,14 +14,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <limits.h>
 
 int jitMain(int argc, char **argv) {
   // Initialize logger
   idevice_init_logger(Debug, Disabled, NULL);
 
-  const char *device_ip = argv[1];
-  const char *bundle_id = argv[2];
-  const char *pairing_file = argc > 3 ? argv[3] : "pairing_file.plist";
+  // Hardcode bundle identifier and device IP
+  const char *bundle_id = "com.stossy11.MeloNX";
+  const char *device_ip = "10.7.0.1";
+
+  /*****************************************************************
+   * Locate pairing file in app bundle
+   *****************************************************************/
+  printf("=== Searching for pairing_file.plist in app bundle ===\n");
+  CFURLRef pairingFileURL = CFBundleCopyResourceURL(CFBundleGetMainBundle(),
+                                                    CFSTR("pairing_file"),
+                                                    CFSTR("plist"),
+                                                    NULL);
+  if (pairingFileURL == NULL) {
+    fprintf(stderr, "Pairing file not found in the app bundle.\n");
+    return 1;
+  }
+  char pairingFilePath[PATH_MAX];
+  if (!CFURLGetFileSystemRepresentation(pairingFileURL, TRUE, (UInt8 *)pairingFilePath, PATH_MAX)) {
+    fprintf(stderr, "Error converting pairing file URL to file system representation.\n");
+    CFRelease(pairingFileURL);
+    return 1;
+  }
+  CFRelease(pairingFileURL);
+  printf("Pairing file found at path: %s\n", pairingFilePath);
 
   /*****************************************************************
    * CoreDeviceProxy Setup
@@ -38,9 +61,9 @@ int jitMain(int argc, char **argv) {
     return 1;
   }
 
-  // Read pairing file
+  // Read pairing file from the bundle
   IdevicePairingFile *pairing = NULL;
-  IdeviceErrorCode err = idevice_pairing_file_read(pairing_file, &pairing);
+  IdeviceErrorCode err = idevice_pairing_file_read(pairingFilePath, &pairing);
   if (err != IdeviceSuccess) {
     fprintf(stderr, "Failed to read pairing file: %d\n", err);
     return 1;
@@ -115,8 +138,7 @@ int jitMain(int argc, char **argv) {
 
   // Get DebugProxy service
   XPCServiceHandle *debug_service = NULL;
-  err = xpc_device_get_service(
-      xpc_device, "com.apple.internal.dt.remote.debugproxy", &debug_service);
+  err = xpc_device_get_service(xpc_device, "com.apple.internal.dt.remote.debugproxy", &debug_service);
   if (err != IdeviceSuccess) {
     fprintf(stderr, "Failed to get debug proxy service: %d\n", err);
     return 1;
@@ -124,8 +146,7 @@ int jitMain(int argc, char **argv) {
 
   // Get ProcessControl service
   XPCServiceHandle *pc_service = NULL;
-  err = xpc_device_get_service(xpc_device, "com.apple.instruments.dtservicehub",
-                               &pc_service);
+  err = xpc_device_get_service(xpc_device, "com.apple.instruments.dtservicehub", &pc_service);
   if (err != IdeviceSuccess) {
     fprintf(stderr, "Failed to get process control service: %d\n", err);
     xpc_device_free(xpc_device);
@@ -138,7 +159,7 @@ int jitMain(int argc, char **argv) {
    *****************************************************************/
   printf("\n=== Launching App ===\n");
 
-  // Get the adapter back from XPC device
+  // Get the adapter back from the XPC device
   AdapterHandle *pc_adapter = NULL;
   err = xpc_device_adapter_into_inner(xpc_device, &pc_adapter);
   if (err != IdeviceSuccess) {
@@ -245,8 +266,7 @@ int jitMain(int argc, char **argv) {
   char attach_command[64];
   snprintf(attach_command, sizeof(attach_command), "vAttach;%" PRIx64, pid);
 
-  DebugserverCommandHandle *attach_cmd =
-      debugserver_command_new(attach_command, NULL, 0);
+  DebugserverCommandHandle *attach_cmd = debugserver_command_new(attach_command, NULL, 0);
   if (attach_cmd == NULL) {
     fprintf(stderr, "Failed to create attach command\n");
     debug_proxy_free(debug_proxy);
