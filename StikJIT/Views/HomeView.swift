@@ -9,21 +9,19 @@ import SwiftUI
 
 struct HomeView: View {
     var body: some View {
-        VStack {
-            Spacer()
-            Text("Welcome to StikJIT")
-                .font(.largeTitle)
-                .bold()
+        Button(action: startJITInBackground) {
+            Text("Enable Jit")
                 .padding()
-
-            Text("Use the Debug tab to monitor the logs.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .padding()
-            Spacer()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+    }
+    
+    func startJITInBackground() {
+        DispatchQueue.global(qos: .background).async {
+            jitMain()
+        }
     }
 }
 

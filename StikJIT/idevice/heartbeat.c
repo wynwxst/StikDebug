@@ -18,11 +18,11 @@ void startHeartbeat() {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_port = htons(LOCKDOWN_PORT);
-  if (inet_pton(AF_INET, "10.7.0.2", &addr.sin_addr) <= 0) {
+  if (inet_pton(AF_INET, "10.7.0.1", &addr.sin_addr) <= 0) {
     fprintf(stderr, "DEBUG: Error converting IP address.\n");
     return;
   }
-  printf("DEBUG: Socket address created for IP 10.7.0.2 on port %d.\n", LOCKDOWN_PORT);
+  printf("DEBUG: Socket address created for IP 10.7.0.1 on port %d.\n", LOCKDOWN_PORT);
 
   printf("DEBUG: Searching the app bundle for pairing_file.plist...\n");
   CFURLRef pairingFileURL = CFBundleCopyResourceURL(CFBundleGetMainBundle(),

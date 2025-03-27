@@ -4,3 +4,4 @@
 
 #include "idevice.h"
 #include "heartbeat.h"
+#include "jit.h"
