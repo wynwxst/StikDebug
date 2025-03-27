@@ -15,6 +15,12 @@ struct HeartbeatApp: App {
     @State private var isPairing = false
     @State private var heartBeat = false
     @State private var error: Int32? = nil
+    
+    init() {
+        let fixMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.fix_init(forOpeningContentTypes:asCopy:)))!
+        let origMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.init(forOpeningContentTypes:asCopy:)))!
+        method_exchangeImplementations(origMethod, fixMethod)
+    }
 
     var body: some Scene {
         WindowGroup {
