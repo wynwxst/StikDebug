@@ -14,9 +14,9 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }
-            DebugView()
+            SettingsView()
                 .tabItem {
-                    Label("Debug", systemImage: "ladybug")
+                    Label("Swttings", systemImage: "gearshape.fill")
                 }
         }
     }
