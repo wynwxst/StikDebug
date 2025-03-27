@@ -23,19 +23,16 @@ struct HeartbeatApp: App {
                             }
                         }
                         startProxy()
-                        startHeartbeatInBackground()
+                        if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                            startHeartbeatInBackground()
+                        }
                     }
             } else {
                 MainTabView()
             }
         }
     }
-
-    func startHeartbeatInBackground() {
-        DispatchQueue.global(qos: .background).async {
-            startHeartbeat()
-        }
-    }
+    
 
     func startProxy() {
         let port = 51820
@@ -54,6 +51,18 @@ struct HeartbeatApp: App {
         }
     }
 }
+
+
+func startHeartbeatInBackground() {
+    let heartBeat = Thread {
+        startHeartbeat()
+    }
+    
+    heartBeat.qualityOfService = .background
+    heartBeat.name = "HeartBeat"
+    heartBeat.start()
+}
+
 
 struct LoadingView: View {
     @State private var animate = false

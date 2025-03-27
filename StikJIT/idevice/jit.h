@@ -9,6 +9,6 @@
 #ifndef JIT_H
 #define JIT_H
 
-int jitMain(int argc, char **argv);
+int debug_app(const char *bundle_id);
 
 #endif /* JIT_H */

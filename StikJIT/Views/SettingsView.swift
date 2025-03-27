@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
+    @State private var isShowingPairingFilePicker = false
 
     @State private var selectedBackgroundColor: Color = Color.primaryBackground
     @State private var showIconPopover = false
@@ -46,6 +47,18 @@ struct SettingsView: View {
                         }
                         .listRowBackground(Color.cardBackground)
                         .foregroundColor(.primaryText)
+                }
+                
+                Section(header: Text("Pairing File").font(.headline).foregroundColor(.primaryText)) {
+                    HStack {
+                        Button {
+                            isShowingPairingFilePicker = true
+                        } label: {
+                            Text("Import New Pairing File")
+                        }
+                        Spacer()
+                    }
+                    .listRowBackground(Color.cardBackground)
                 }
 
                 Section(header: Text("About").font(.headline).foregroundColor(.primaryText)) {
@@ -97,6 +110,38 @@ struct SettingsView: View {
             .navigationBarTitle("Settings")
             .font(.bodyFont)
             .accentColor(.accentColor)
+        }
+        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.item]) {result in
+            switch result {
+            
+            case .success(let url):
+                let fileManager = FileManager.default
+                let accessing = url.startAccessingSecurityScopedResource()
+                
+                if fileManager.fileExists(atPath: url.path) {
+                    do {
+                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        }
+                        
+                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        print("File copied successfully!")
+                        startHeartbeatInBackground()
+                        
+                        Thread.sleep(forTimeInterval: 5)
+                    } catch {
+                        print("Error copying file: \(error)")
+                    }
+                } else {
+                    print("Source file does not exist.")
+                }
+                
+                if accessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            case .failure(_):
+                print("Failed")
+            }
         }
         .onAppear {
             loadCustomBackgroundColor()
