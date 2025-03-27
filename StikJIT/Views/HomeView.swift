@@ -126,7 +126,7 @@ struct HomeView: View {
 }
 
 class InstalledAppsViewModel: ObservableObject {
-    @Published var apps: [String] = []
+    @Published var apps: [String: String] = [:]
     
     init() {
         loadApps()
@@ -134,78 +134,40 @@ class InstalledAppsViewModel: ObservableObject {
     
     func loadApps() {
         guard let rawPointer = list_installed_apps() else {
-            self.apps = []
+            self.apps = [:]
             return
         }
         
         let output = String(cString: rawPointer)
         free(rawPointer)
-        
-        if output.hasPrefix("Error:") {
-            self.apps = []
-        } else {
-            self.apps = output.components(separatedBy: "\n").filter { !$0.isEmpty }
+
+        guard let jsonData = output.data(using: .utf8) else {
+            print("Error: Failed to convert string to data")
+            self.apps = [:]
+            return
         }
+        
+        if output.hasPrefix("{\"error\":") {
+            self.apps = [:]
+        }
+        
+        print(output)
+
+        // Decode the JSON into a Swift dictionary
+        do {
+            let decoder = JSONDecoder()
+            let apps = try decoder.decode([String: String].self, from: jsonData)
+            self.apps = apps
+            return
+        } catch {
+            print("Error: Failed to decode JSON - \(error)")
+            self.apps = [:]
+            return
+        }
+        
     }
 }
 
-struct InstalledAppsListView: View {
-    @AppStorage("username") private var username = "User"
-    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
-    @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "#000000") ?? Color.primaryBackground
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    @StateObject var viewModel = InstalledAppsViewModel()
-    @Environment(\.dismiss) var dismiss
-    @State private var searchText: String = ""
-    
-    var onSelect: (String) -> Void
-    
-    var filteredApps: [String] {
-        if searchText.isEmpty {
-            return viewModel.apps
-        } else {
-            return viewModel.apps.filter { $0.localizedCaseInsensitiveContains(searchText) }
-        }
-    }
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                selectedBackgroundColor                .edgesIgnoringSafeArea(.all)
-                
-                List {
-                    ForEach(filteredApps, id: \.self) { app in
-                        Button(action: {
-                            onSelect(app)
-                        }) {
-                            Text(app)
-                                .font(.system(.body, design: .rounded))
-                                .padding(.vertical, 8)
-                        }
-                        .listRowBackground(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(8)
-                    }
-                }
-                .listStyle(InsetGroupedListStyle())
-                .navigationTitle("Installed Apps")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") {
-                            dismiss()
-                        }
-                    }
-                }
-                .searchable(text: $searchText, prompt: "Search Apps")
-            }
-            .onReceive(timer) { _ in
-                refreshBackground()
-            }
-        }
-    }
-    private func refreshBackground() {
-        selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
-    }
-}
 
 
 #Preview {
