@@ -21,24 +21,27 @@ struct HeartbeatApp: App {
             if isLoading {
                 LoadingView()
                     .onAppear {
-                        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                            if heartBeat {
-                                isLoading = false
-                                timer.invalidate()
-                            } else {
-                                if let error {
-                                    if error == InvalidHostID.rawValue {
-                                        isPairing = true
-                                    } else {
-                                        startHeartbeatInBackground()
-                                    }
-                                    self.error = nil
-                                }
-                            }
-                        }
                         startProxy()
                         if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                                if heartBeat {
+                                    isLoading = false
+                                    timer.invalidate()
+                                } else {
+                                    if let error {
+                                        if error == InvalidHostID.rawValue {
+                                            isPairing = true
+                                        } else {
+                                            startHeartbeatInBackground()
+                                        }
+                                        self.error = nil
+                                    }
+                                }
+                            }
+                            
                             startHeartbeatInBackground()
+                        } else {
+                            isLoading = false
                         }
                     }
                     .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
