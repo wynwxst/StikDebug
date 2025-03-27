@@ -39,13 +39,13 @@ struct HomeView: View {
                 }
                 .padding(.top, 40)
                 
-                // Single button - handles both pairing file and JIT
+                // Main action button - changes based on whether we have a pairing file
                 Button(action: {
                     if pairingFileExists {
-                        // If pairing file exists, show app list
+                        // Got a pairing file, show apps
                         isShowingInstalledApps = true
                     } else {
-                        // If no pairing file, show file picker
+                        // No pairing file yet, let's get one
                         isShowingPairingFilePicker = true
                     }
                 }) {
@@ -65,7 +65,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 20)
                 
-                // Success message that doesn't affect layout
+                // Status message area - keeps layout consistent
                 ZStack {
                     if showPairingFileMessage && pairingFileIsValid {
                         Text("✓ Pairing file successfully imported")
@@ -78,12 +78,12 @@ struct HomeView: View {
                             .transition(.opacity)
                     }
                     
-                    // This empty text reserves space so layout doesn't shift
+                    // Invisible text to reserve space - no layout jumps
                     Text(" ").opacity(0)
                 }
                 .frame(height: 30)
                 
-                // Error messages (only show if there's an error)
+                // Only show error messages when needed
                 if showPairingFileMessage && !pairingFileIsValid {
                     Text(pairingFileMessage)
                         .font(.system(.callout, design: .rounded))
@@ -116,7 +116,7 @@ struct HomeView: View {
                 
                 let fileManager = FileManager.default
                 
-                // Check if the file has a valid extension
+                // Make sure we got the right file type
                 let fileExtension = url.pathExtension.lowercased()
                 guard fileExtension == "plist" || fileExtension == "mobiledevicepairing" else {
                     pairingFileMessage = "Invalid file type. Please select a .plist or .mobiledevicepairing file."
@@ -128,20 +128,19 @@ struct HomeView: View {
                 
                 if fileManager.fileExists(atPath: url.path) {
                     do {
-                        let destURL = URL.documentsDirectory.appendingPathComponent("pairingFile.plist")
-                        
-                        if fileManager.fileExists(atPath: destURL.path) {
-                            try fileManager.removeItem(at: destURL)
+                        // Clear any existing pairing file first
+                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                         }
                         
-                        try fileManager.copyItem(at: url, to: destURL)
-                        print("File copied successfully!")
+                        // Save the file to our docs directory
+                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                         
-                        // Validate the pairing file
+                        // Check if it's actually a valid pairing file
                         do {
-                            let data = try Data(contentsOf: destURL)
+                            let data = try Data(contentsOf: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                             if let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
-                                // Basic validation - check for some expected keys in a pairing file
+                                // Look for keys we'd expect in a device pairing file
                                 if plist["DeviceCertificate"] != nil || plist["HostCertificate"] != nil || 
                                    plist["WiFiMACAddress"] != nil || plist["DeviceID"] != nil {
                                     pairingFileMessage = "" // We'll use a fixed success message
@@ -156,14 +155,14 @@ struct HomeView: View {
                                         showPairingFileMessage = true
                                     }
                                     
-                                    // Automatically hide message after 3 seconds
+                                    // Clean up after 3 secs
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                                         withAnimation(.easeOut(duration: 0.2)) {
                                             showPairingFileMessage = false
                                         }
                                     }
                                     
-                                    // Don't automatically show apps list - let user click button
+                                    // Let user click the button themselves
                                 } else {
                                     pairingFileMessage = "File is a plist but doesn't appear to be a valid pairing file."
                                     pairingFileIsValid = false
@@ -192,7 +191,7 @@ struct HomeView: View {
                 
                 url.stopAccessingSecurityScopedResource()
                 
-                // Hide error messages after 3 seconds
+                // Auto-hide error messages too
                 if !pairingFileIsValid && showPairingFileMessage {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         withAnimation {
@@ -206,7 +205,7 @@ struct HomeView: View {
                 showPairingFileMessage = true
                 pairingFileIsValid = false
                 
-                // Hide error message after 3 seconds
+                // Hide error after a few seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     withAnimation {
                         showPairingFileMessage = false
@@ -264,7 +263,7 @@ struct HomeView: View {
     }
 }
 
-// Replace the AppInfo struct and related code with this simpler version
+// Replace the AppInfo struct with a simplified version
 struct AppInfo: Identifiable, Hashable {
     let id = UUID()
     let bundleID: String
@@ -276,67 +275,6 @@ struct AppInfo: Identifiable, Hashable {
     
     static func == (lhs: AppInfo, rhs: AppInfo) -> Bool {
         return lhs.bundleID == rhs.bundleID
-    }
-    
-    // Generate a color based on the bundle ID
-    var iconColor: Color {
-        var hash = 0
-        for char in bundleID {
-            hash = ((hash << 5) &- hash) &+ Int(char.asciiValue ?? 0)
-        }
-        let hue = Double(abs(hash) % 360) / 360.0
-        return Color(hue: hue, saturation: 0.8, brightness: 0.9)
-    }
-    
-    // Get an appropriate SF Symbol based on bundle ID
-    var iconSymbol: String {
-        let appTypes: [(pattern: String, icon: String)] = [
-            ("game", "gamecontroller"),
-            ("play", "gamecontroller"),
-            ("photo", "camera"),
-            ("camera", "camera.viewfinder"),
-            ("spotify", "music.note"),
-            ("music", "music.note"),
-            ("audio", "headphones"),
-            ("netflix", "play.tv"),
-            ("video", "play.rectangle"),
-            ("tv", "tv"),
-            ("player", "play.circle"),
-            ("facebook", "message"),
-            ("messenger", "message.fill"),
-            ("chat", "bubble.left.and.bubble.right"),
-            ("message", "bubble.left"),
-            ("mail", "envelope"),
-            ("safari", "globe"),
-            ("web", "network"),
-            ("browser", "safari"),
-            ("note", "note.text"),
-            ("docs", "doc.text"),
-            ("document", "doc"),
-            ("word", "doc.richtext"),
-            ("file", "folder"),
-            ("sheets", "tablecells"),
-            ("excel", "tablecells.fill"),
-            ("calc", "function"),
-            ("shop", "cart"),
-            ("store", "bag"),
-            ("pay", "creditcard"),
-            ("wallet", "wallet.pass"),
-            ("health", "heart"),
-            ("fitness", "figure.walk"),
-            ("exercise", "figure.run"),
-        ]
-        
-        let lowerBundleID = bundleID.lowercased()
-        let lowerName = name.lowercased()
-        
-        for appType in appTypes {
-            if lowerBundleID.contains(appType.pattern) || lowerName.contains(appType.pattern) {
-                return appType.icon
-            }
-        }
-        
-        return "app.fill"
     }
 }
 
@@ -455,8 +393,8 @@ struct InstalledAppsListView: View {
                     .frame(width: 48, height: 48)
                     .cornerRadius(12)
             } else {
-                // Show placeholder and try to load icon
-                placeholderIconView(for: app)
+                // Simple generic placeholder for apps without icons
+                placeholderIconView()
                     .onAppear {
                         loadAppIcon(for: app)
                     }
@@ -464,16 +402,16 @@ struct InstalledAppsListView: View {
         }
     }
     
-    // Helper view for placeholder icon
-    private func placeholderIconView(for app: AppInfo) -> some View {
+    // Simplified placeholder without complex color/symbol logic
+    private func placeholderIconView() -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
-                .fill(app.iconColor)
+                .fill(Color.gray.opacity(0.3))
                 .frame(width: 48, height: 48)
             
-            Image(systemName: app.iconSymbol)
+            Image(systemName: "app")
                 .font(.system(size: 24))
-                .foregroundColor(.white)
+                .foregroundColor(.gray)
         }
     }
     
@@ -504,18 +442,18 @@ struct InstalledAppsListView: View {
     }
 }
 
-// Replace the Icon Fetcher with a simpler implementation
+// App icon stuff - just fetches from App Store
 class AppStoreIconFetcher {
     static private var iconCache: [String: UIImage] = [:]
     
     static func getIcon(for bundleID: String, completion: @escaping (UIImage?) -> Void) {
-        // Check cache first
+        // Check our cache first - why waste bandwidth
         if let cachedIcon = iconCache[bundleID] {
             completion(cachedIcon)
             return
         }
         
-        // Simplified URL creation
+        // Hit the App Store API
         let baseURLString = "https://itunes.apple.com/lookup?bundleId="
         let urlString = baseURLString + bundleID
         guard let url = URL(string: urlString) else {
@@ -523,16 +461,17 @@ class AppStoreIconFetcher {
             return
         }
         
-        // Step 1: Fetch app data
+        // Three step process:
+        // 1. Get app data from iTunes
         fetchAppData(from: url) { appData in
             if let appData = appData {
-                // Step 2: Extract icon URL from app data
+                // 2. Extract the icon URL
                 extractIconURL(from: appData) { iconURL in
                     if let iconURL = iconURL {
-                        // Step 3: Download icon
+                        // 3. Download the actual icon
                         downloadIcon(from: iconURL) { image in
                             if let image = image {
-                                // Store in cache
+                                // Save it for next time
                                 iconCache[bundleID] = image
                             }
                             DispatchQueue.main.async {
@@ -553,7 +492,7 @@ class AppStoreIconFetcher {
         }
     }
     
-    // Helper method to fetch app data
+    // Boring network stuff below
     private static func fetchAppData(from url: URL, completion: @escaping ([String: Any]?) -> Void) {
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else {
@@ -575,7 +514,7 @@ class AppStoreIconFetcher {
         }.resume()
     }
     
-    // Helper method to extract icon URL
+    // Extract the high-res icon URL
     private static func extractIconURL(from appData: [String: Any], completion: @escaping (URL?) -> Void) {
         if let iconURLString = appData["artworkUrl100"] as? String,
            let iconURL = URL(string: iconURLString) {
@@ -585,7 +524,7 @@ class AppStoreIconFetcher {
         }
     }
     
-    // Helper method to download icon
+    // Grab the image data and convert to UIImage
     private static func downloadIcon(from url: URL, completion: @escaping (UIImage?) -> Void) {
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let data = data, let image = UIImage(data: data) {
