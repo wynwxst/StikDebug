@@ -11,7 +11,9 @@ import em_proxy
 @main
 struct HeartbeatApp: App {
     @State private var isLoading = true
+    @State private var isPairing = false
     @State private var heartBeat = false
+    @State private var error: Int32? = nil
 
     var body: some Scene {
         WindowGroup {
@@ -22,11 +24,50 @@ struct HeartbeatApp: App {
                             if heartBeat {
                                 isLoading = false
                                 timer.invalidate()
+                            } else {
+                                if let error {
+                                    if error == InvalidHostID.rawValue {
+                                        isPairing = true
+                                    } else {
+                                        startHeartbeatInBackground()
+                                    }
+                                    self.error = nil
+                                }
                             }
                         }
                         startProxy()
                         if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
                             startHeartbeatInBackground()
+                        }
+                    }
+                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [.item]) {result in
+                        switch result {
+                            
+                        case .success(let url):
+                            let fileManager = FileManager.default
+                            let accessing = url.startAccessingSecurityScopedResource()
+                            
+                            if fileManager.fileExists(atPath: url.path) {
+                                do {
+                                    if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                                        try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                                    }
+                                    
+                                    try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                                    print("File copied successfully!")
+                                    startHeartbeatInBackground()
+                                } catch {
+                                    print("Error copying file: \(error)")
+                                }
+                            } else {
+                                print("Source file does not exist.")
+                            }
+                            
+                            if accessing {
+                                url.stopAccessingSecurityScopedResource()
+                            }
+                        case .failure(_):
+                            print("Failed")
                         }
                     }
             } else {
@@ -63,12 +104,11 @@ struct HeartbeatApp: App {
                     
                     self.heartBeat = true
                 } else {
-                    print("Error: \(message ?? "") (Code: \(result))")
+                    print("Error: \(result == InvalidHostID.rawValue ? "Invalid host ID, Please Selecr New Pairing File" : message ?? "") (Code: \(result))")
                     
                     showAlert(title: "HeartBeat Error", message: "\(message ?? "") (\(result))", showOk: true) { _ in
-                        startHeartbeatInBackground()
+                        self.error = result
                     }
-                    
                 }
             }
             
