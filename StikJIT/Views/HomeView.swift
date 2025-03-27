@@ -15,10 +15,11 @@ struct HomeView: View {
     @AppStorage("bundleID") private var bundleID: String = ""
     @State private var isProcessing = false
     @State private var isShowingInstalledApps = false
+    @State private var isShowingPairingFilePicker = false
 
     var body: some View {
         ZStack {
-            selectedBackgroundColor                .edgesIgnoringSafeArea(.all)
+            selectedBackgroundColor.edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 25) {
                 Spacer()
@@ -35,7 +36,11 @@ struct HomeView: View {
                 .padding(.top, 40)
                 
                 Button(action: {
-                    isShowingInstalledApps = true
+                    if !FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                        isShowingPairingFilePicker = true
+                    } else {
+                        isShowingInstalledApps = true
+                    }
                 }) {
                     Label("Enable JIT", systemImage: "list.bullet")
                         .font(.system(.title3, design: .rounded))
@@ -55,6 +60,38 @@ struct HomeView: View {
         }
         .onReceive(timer) { _ in
             refreshBackground()
+        }
+        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.item]) {result in 
+            switch result {
+            
+            case .success(let url):
+                let fileManager = FileManager.default
+                let accessing = url.startAccessingSecurityScopedResource()
+                
+                if fileManager.fileExists(atPath: url.path) {
+                    do {
+                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        }
+                        
+                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        print("File copied successfully!")
+                        startHeartbeatInBackground()
+                        
+                        Thread.sleep(forTimeInterval: 5)
+                    } catch {
+                        print("Error copying file: \(error)")
+                    }
+                } else {
+                    print("Source file does not exist.")
+                }
+                
+                if accessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            case .failure(_):
+                print("Failed")
+            }
         }
         .sheet(isPresented: $isShowingInstalledApps) {
             InstalledAppsListView { selectedBundle in
@@ -78,12 +115,7 @@ struct HomeView: View {
                 return
             }
             
-            var args: [UnsafeMutablePointer<Int8>?] = [cBundleID]
-            let argc = Int32(args.count)
-            
-            args.withUnsafeMutableBufferPointer { buffer in
-                _ = jitMain(argc, buffer.baseAddress)
-            }
+            _ = debug_app(cBundleID)
             
             free(cBundleID)
             DispatchQueue.main.async {

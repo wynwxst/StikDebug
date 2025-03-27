@@ -22,20 +22,17 @@ char *list_installed_apps() {
         return strdup("Error: Invalid IP address");
     }
 
-    CFURLRef pairingFileURL = CFBundleCopyResourceURL(CFBundleGetMainBundle(),
-                                                      CFSTR("pairing_file"),
-                                                      CFSTR("plist"),
-                                                      NULL);
-    if (pairingFileURL == NULL) {
-        return strdup("Error: Pairing file not found");
+    char pairingFilePath[1024];
+    CFURLRef url = CFCopyHomeDirectoryURL();
+    if (url) {
+        CFStringRef path = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
+        if (path) {
+            CFStringGetCString(path, pairingFilePath, sizeof(pairingFilePath), kCFStringEncodingUTF8);
+            strncat(pairingFilePath, "/Documents/pairingFile.plist", sizeof(pairingFilePath) - strlen(pairingFilePath) - 1);
+            CFRelease(path);
+        }
+        CFRelease(url);
     }
-
-    char pairingFilePath[PATH_MAX];
-    if (!CFURLGetFileSystemRepresentation(pairingFileURL, TRUE, (UInt8 *)pairingFilePath, PATH_MAX)) {
-        CFRelease(pairingFileURL);
-        return strdup("Error: Pairing file path conversion failed");
-    }
-    CFRelease(pairingFileURL);
 
     IdevicePairingFile *pairing_file = NULL;
     IdeviceErrorCode err = idevice_pairing_file_read(pairingFilePath, &pairing_file);
