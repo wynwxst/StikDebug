@@ -64,7 +64,7 @@ char *list_installed_apps() {
     }
 
     plist_t *app_list = (plist_t *)apps;
-    char *result = malloc(8192);  // Allocate memory for output
+    char *result = malloc(16384);  // Increased buffer size for additional data
     result[0] = '\0';
 
     for (size_t i = 0; i < apps_len; i++) {
@@ -83,8 +83,30 @@ char *list_installed_apps() {
                     if (bundle_id_node) {
                         char *bundle_id = NULL;
                         plist_get_string_val(bundle_id_node, &bundle_id);
+                        
+                        // Get app name
+                        char *app_name = NULL;
+                        plist_t name_node = plist_dict_get_item(app, "CFBundleName");
+                        if (name_node) {
+                            plist_get_string_val(name_node, &app_name);
+                        } else {
+                            name_node = plist_dict_get_item(app, "CFBundleDisplayName");
+                            if (name_node) {
+                                plist_get_string_val(name_node, &app_name);
+                            }
+                        }
+                        
+                        // Add bundle ID and app name to result
                         strcat(result, bundle_id);
+                        strcat(result, "|");  // Use pipe as separator
+                        if (app_name) {
+                            strcat(result, app_name);
+                            free(app_name);
+                        } else {
+                            strcat(result, bundle_id);  // Use bundle ID as fallback name
+                        }
                         strcat(result, "\n");
+                        
                         free(bundle_id);
                     }
                 }
@@ -96,4 +118,12 @@ char *list_installed_apps() {
     tcp_provider_free(provider);
 
     return result;
+}
+
+char *fetch_app_icon(const char *bundle_path) {
+    // This would require implementing AFC service to access files on the device
+    // and extract the icon file from the app bundle
+    
+    // For now, return NULL as this requires significant additional code
+    return NULL;
 }
