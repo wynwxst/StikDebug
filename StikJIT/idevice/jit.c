@@ -21,8 +21,13 @@ int jitMain(int argc, char **argv) {
   // Initialize logger
   idevice_init_logger(Debug, Disabled, NULL);
 
-  // Hardcode bundle identifier and device IP
-  const char *bundle_id = "com.stossy11.MeloNX";
+  if (argc < 1) {
+    fprintf(stderr, "Usage: <bundle_id>\n");
+    return 1;
+  }
+  const char *bundle_id = argv[0];
+
+  // Hardcode device IP
   const char *device_ip = "10.7.0.1";
 
   /*****************************************************************

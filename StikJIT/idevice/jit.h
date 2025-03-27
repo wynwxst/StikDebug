@@ -9,6 +9,6 @@
 #ifndef JIT_H
 #define JIT_H
 
-void jitMain();
+int jitMain(int argc, char **argv);
 
 #endif /* JIT_H */
