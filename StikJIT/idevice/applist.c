@@ -66,7 +66,9 @@ char *list_installed_apps() {
     plist_t *app_list = (plist_t *)apps;
     char *result = malloc(16384);  // Increased buffer size for additional data
     result[0] = '\0';
+    strcat(result, "{\n");
 
+    int first_entry = 1;
     for (size_t i = 0; i < apps_len; i++) {
         plist_t app = app_list[i];
         // Check if the app has an "Entitlements" dictionary.
@@ -83,36 +85,58 @@ char *list_installed_apps() {
                     if (bundle_id_node) {
                         char *bundle_id = NULL;
                         plist_get_string_val(bundle_id_node, &bundle_id);
-                        
-                        // Get app name
+
+                        // Skip if bundle ID is empty
+                        if (bundle_id == NULL || strlen(bundle_id) == 0) {
+                            free(bundle_id);
+                            continue;
+                        }
+
+                        // Retrieve the app name
+                        plist_t app_name_node = plist_dict_get_item(app, "CFBundleName");
                         char *app_name = NULL;
-                        plist_t name_node = plist_dict_get_item(app, "CFBundleName");
-                        if (name_node) {
-                            plist_get_string_val(name_node, &app_name);
+                        if (app_name_node) {
+                            plist_get_string_val(app_name_node, &app_name);
                         } else {
-                            name_node = plist_dict_get_item(app, "CFBundleDisplayName");
-                            if (name_node) {
-                                plist_get_string_val(name_node, &app_name);
+                            app_name = strdup("Unknown");
+                        }
+
+                        // Escape special characters in app name and bundle ID
+                        char escaped_app_name[1024] = {0};
+                        char escaped_bundle_id[1024] = {0};
+                        for (int j = 0, k = 0; app_name[j] != '\0'; j++, k++) {
+                            if (app_name[j] == '"' || app_name[j] == '\\') {
+                                escaped_app_name[k++] = '\\';
                             }
+                            escaped_app_name[k] = app_name[j];
                         }
-                        
-                        // Add bundle ID and app name to result
-                        strcat(result, bundle_id);
-                        strcat(result, "|");  // pipe as separator
-                        if (app_name) {
-                            strcat(result, app_name);
-                            free(app_name);
-                        } else {
-                            strcat(result, bundle_id);  // Use bundle ID as fallback name
+                        for (int j = 0, k = 0; bundle_id[j] != '\0'; j++, k++) {
+                            if (bundle_id[j] == '"' || bundle_id[j] == '\\') {
+                                escaped_bundle_id[k++] = '\\';
+                            }
+                            escaped_bundle_id[k] = bundle_id[j];
                         }
-                        strcat(result, "\n");
-                        
+
+                        // Add the app name and bundle ID to the result in JSON format
+                        if (!first_entry) {
+                            strcat(result, ",\n");
+                        }
+                        strcat(result, "  \"");
+                        strcat(result, escaped_app_name);
+                        strcat(result, "\": \"");
+                        strcat(result, escaped_bundle_id);
+                        strcat(result, "\"");
+
+                        first_entry = 0;
                         free(bundle_id);
+                        free(app_name);
                     }
                 }
             }
         }
     }
+
+    strcat(result, "\n}\n");
 
     installation_proxy_client_free(client);
     tcp_provider_free(provider);

@@ -114,7 +114,7 @@ struct SettingsView: View {
         }
         .fileImporter(
             isPresented: $isShowingPairingFilePicker, 
-            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!]
+            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!, .propertyList]
         ) {result in
             switch result {
             

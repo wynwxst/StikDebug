@@ -8,6 +8,13 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+
+extension UIDocumentPickerViewController {
+    @objc func fix_init(forOpeningContentTypes contentTypes: [UTType], asCopy: Bool) -> UIDocumentPickerViewController {
+        return fix_init(forOpeningContentTypes: contentTypes, asCopy: true)
+    }
+}
+
 struct HomeView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
@@ -107,7 +114,7 @@ struct HomeView: View {
         }
         .fileImporter(
             isPresented: $isShowingPairingFilePicker, 
-            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!]
+            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!]
         ) { result in 
             switch result {
             case .success(let url):
@@ -298,6 +305,24 @@ class InstalledAppsViewModel: ObservableObject {
         let output = String(cString: rawPointer)
         free(rawPointer)
         
+        // Try to parse JSON format first
+        if let jsonData = output.data(using: .utf8) {
+            do {
+                let decoder = JSONDecoder()
+                let appsDict = try decoder.decode([String: String].self, from: jsonData)
+                if let app = appsDict.first, app.key == "error" {
+                    self.apps = []
+                } else {
+                    self.apps = appsDict.map { AppInfo(bundleID: $0.key, name: $0.value) }
+                }
+                return
+            } catch {
+                print("Error decoding JSON, falling back to text parsing: \(error.localizedDescription)")
+                // Fall through to text parsing below
+            }
+        }
+        
+        // Fallback to text parsing
         if output.hasPrefix("Error:") {
             self.apps = []
         } else {
@@ -434,6 +459,7 @@ struct InstalledAppsListView: View {
     
     // Helper method to load app icon
     private func loadAppIcon(for app: AppInfo) {
+        // Use AppStoreIconFetcher for now
         AppStoreIconFetcher.getIcon(for: app.bundleID) { image in
             if let image = image {
                 self.appIcons[app.bundleID] = image
@@ -446,7 +472,7 @@ struct InstalledAppsListView: View {
     }
 }
 
-// App icon stuff - just fetches from App Store
+// Add this class before the #Preview section
 class AppStoreIconFetcher {
     static private var iconCache: [String: UIImage] = [:]
     
