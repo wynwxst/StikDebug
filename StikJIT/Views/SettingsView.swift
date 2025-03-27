@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
@@ -111,7 +112,10 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.item]) {result in
+        .fileImporter(
+            isPresented: $isShowingPairingFilePicker, 
+            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!]
+        ) {result in
             switch result {
             
             case .success(let url):

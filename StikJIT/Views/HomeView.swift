@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     @AppStorage("username") private var username = "User"
@@ -104,7 +105,10 @@ struct HomeView: View {
             refreshBackground()
             checkPairingFileExists()
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.data, .item]) { result in 
+        .fileImporter(
+            isPresented: $isShowingPairingFilePicker, 
+            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!]
+        ) { result in 
             switch result {
             case .success(let url):
                 guard url.startAccessingSecurityScopedResource() else {
