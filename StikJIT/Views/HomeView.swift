@@ -17,6 +17,9 @@ struct HomeView: View {
     @State private var isShowingInstalledApps = false
     @State private var isShowingPairingFilePicker = false
     @State private var pairingFileExists: Bool = false
+    @State private var pairingFileMessage: String = ""
+    @State private var showPairingFileMessage: Bool = false
+    @State private var pairingFileIsValid: Bool = false
 
     var body: some View {
         ZStack {
@@ -29,58 +32,65 @@ struct HomeView: View {
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
                     
-                    Text("Follow the steps below to enable JIT")
+                    Text("Click enable JIT to get started")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 40)
                 
-                // Pairing File Button
+                // Single button - handles both pairing file and JIT
                 Button(action: {
-                    isShowingPairingFilePicker = true
+                    if pairingFileExists {
+                        // If pairing file exists, show app list
+                        isShowingInstalledApps = true
+                    } else {
+                        // If no pairing file, show file picker
+                        isShowingPairingFilePicker = true
+                    }
                 }) {
                     HStack {
-                        Image(systemName: "doc.badge.plus")
+                        Image(systemName: pairingFileExists ? "bolt.fill" : "doc.badge.plus")
                             .font(.system(size: 20))
-                        Text("Import Pairing File")
+                        Text(pairingFileExists ? "Enable JIT" : "Import Pairing File")
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.purple)
+                    .background(Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(16)
-                    .shadow(color: Color.purple.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 20)
                 
-                // Enable JIT Button
-                Button(action: {
-                    isShowingInstalledApps = true
-                }) {
-                    HStack {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 20))
-                        Text("Enable JIT")
-                            .font(.system(.title3, design: .rounded))
-                            .fontWeight(.semibold)
+                // Success message that doesn't affect layout
+                ZStack {
+                    if showPairingFileMessage && pairingFileIsValid {
+                        Text("✓ Pairing file successfully imported")
+                            .font(.system(.callout, design: .rounded))
+                            .foregroundColor(.green)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 12)
+                            .background(Color.green.opacity(0.1))
+                            .cornerRadius(8)
+                            .transition(.opacity)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(pairingFileExists ? Color.blue : Color.gray)
-                    .foregroundColor(.white)
-                    .cornerRadius(16)
-                    .shadow(color: pairingFileExists ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
+                    // This empty text reserves space so layout doesn't shift
+                    Text(" ").opacity(0)
                 }
-                .padding(.horizontal, 20)
-                .disabled(!pairingFileExists)
+                .frame(height: 30)
                 
-                if !pairingFileExists {
-                    Text("Please import a pairing file first")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(.secondary)
+                // Error messages (only show if there's an error)
+                if showPairingFileMessage && !pairingFileIsValid {
+                    Text(pairingFileMessage)
+                        .font(.system(.callout, design: .rounded))
+                        .foregroundColor(.red)
+                        .padding(.vertical, 4)
+                        .multilineTextAlignment(.center)
+                        .transition(.opacity)
                 }
                 
                 Spacer()
@@ -94,38 +104,114 @@ struct HomeView: View {
             refreshBackground()
             checkPairingFileExists()
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.item]) { result in 
+        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [.data, .item]) { result in 
             switch result {
             case .success(let url):
+                guard url.startAccessingSecurityScopedResource() else {
+                    pairingFileMessage = "Failed to access the selected file"
+                    showPairingFileMessage = true
+                    pairingFileIsValid = false
+                    return
+                }
+                
                 let fileManager = FileManager.default
-                let accessing = url.startAccessingSecurityScopedResource()
+                
+                // Check if the file has a valid extension
+                let fileExtension = url.pathExtension.lowercased()
+                guard fileExtension == "plist" || fileExtension == "mobiledevicepairing" else {
+                    pairingFileMessage = "Invalid file type. Please select a .plist or .mobiledevicepairing file."
+                    showPairingFileMessage = true
+                    pairingFileIsValid = false
+                    url.stopAccessingSecurityScopedResource()
+                    return
+                }
                 
                 if fileManager.fileExists(atPath: url.path) {
                     do {
-                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        let destURL = URL.documentsDirectory.appendingPathComponent("pairingFile.plist")
+                        
+                        if fileManager.fileExists(atPath: destURL.path) {
+                            try fileManager.removeItem(at: destURL)
                         }
                         
-                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        try fileManager.copyItem(at: url, to: destURL)
                         print("File copied successfully!")
-                        startHeartbeatInBackground()
                         
-                        // Update the file exists state
-                        pairingFileExists = true
-                        
-                        Thread.sleep(forTimeInterval: 5)
+                        // Validate the pairing file
+                        do {
+                            let data = try Data(contentsOf: destURL)
+                            if let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
+                                // Basic validation - check for some expected keys in a pairing file
+                                if plist["DeviceCertificate"] != nil || plist["HostCertificate"] != nil || 
+                                   plist["WiFiMACAddress"] != nil || plist["DeviceID"] != nil {
+                                    pairingFileMessage = "" // We'll use a fixed success message
+                                    pairingFileIsValid = true
+                                    pairingFileExists = true
+                                    
+                                    // Start heartbeat
+                                    startHeartbeatInBackground()
+                                    
+                                    // Show success message briefly
+                                    withAnimation(.easeIn(duration: 0.2)) {
+                                        showPairingFileMessage = true
+                                    }
+                                    
+                                    // Automatically hide message after 3 seconds
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                        withAnimation(.easeOut(duration: 0.2)) {
+                                            showPairingFileMessage = false
+                                        }
+                                    }
+                                    
+                                    // Don't automatically show apps list - let user click button
+                                } else {
+                                    pairingFileMessage = "File is a plist but doesn't appear to be a valid pairing file."
+                                    pairingFileIsValid = false
+                                    showPairingFileMessage = true
+                                }
+                            } else {
+                                pairingFileMessage = "Invalid pairing file format."
+                                pairingFileIsValid = false
+                                showPairingFileMessage = true
+                            }
+                        } catch {
+                            pairingFileMessage = "Could not validate pairing file: \(error.localizedDescription)"
+                            pairingFileIsValid = false
+                            showPairingFileMessage = true
+                        }
                     } catch {
-                        print("Error copying file: \(error)")
+                        pairingFileMessage = "Error copying file: \(error.localizedDescription)"
+                        showPairingFileMessage = true
+                        pairingFileIsValid = false
                     }
                 } else {
-                    print("Source file does not exist.")
+                    pairingFileMessage = "Source file does not exist."
+                    showPairingFileMessage = true
+                    pairingFileIsValid = false
                 }
                 
-                if accessing {
-                    url.stopAccessingSecurityScopedResource()
+                url.stopAccessingSecurityScopedResource()
+                
+                // Hide error messages after 3 seconds
+                if !pairingFileIsValid && showPairingFileMessage {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation {
+                            showPairingFileMessage = false
+                        }
+                    }
                 }
-            case .failure(_):
-                print("Failed")
+                
+            case .failure(let error):
+                pairingFileMessage = "Failed to import file: \(error.localizedDescription)"
+                showPairingFileMessage = true
+                pairingFileIsValid = false
+                
+                // Hide error message after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    withAnimation {
+                        showPairingFileMessage = false
+                    }
+                }
             }
         }
         .sheet(isPresented: $isShowingInstalledApps) {
@@ -139,7 +225,21 @@ struct HomeView: View {
     }
     
     private func checkPairingFileExists() {
-        pairingFileExists = FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path)
+        let exists = FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path)
+        pairingFileExists = exists
+        
+        // If the file exists and we haven't validated it yet, validate it
+        if exists && !pairingFileIsValid {
+            do {
+                let data = try Data(contentsOf: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                if let _ = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
+                    pairingFileIsValid = true
+                }
+            } catch {
+                // Silently fail - we don't want to show an error message on every timer tick
+                pairingFileIsValid = false
+            }
+        }
     }
     
     private func refreshBackground() {
