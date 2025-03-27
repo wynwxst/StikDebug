@@ -7,6 +7,7 @@
 
 import SwiftUI
 import em_proxy
+import UniformTypeIdentifiers
 
 @main
 struct HeartbeatApp: App {
@@ -40,7 +41,7 @@ struct HeartbeatApp: App {
                             startHeartbeatInBackground()
                         }
                     }
-                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [.item]) {result in
+                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
                         switch result {
                             
                         case .success(let url):
