@@ -5,3 +5,4 @@
 #include "idevice.h"
 #include "heartbeat.h"
 #include "jit.h"
+#include "applist.h"
