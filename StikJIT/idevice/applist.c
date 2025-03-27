@@ -98,7 +98,7 @@ char *list_installed_apps() {
                         
                         // Add bundle ID and app name to result
                         strcat(result, bundle_id);
-                        strcat(result, "|");  // Use pipe as separator
+                        strcat(result, "|");  // pipe as separator
                         if (app_name) {
                             strcat(result, app_name);
                             free(app_name);
@@ -121,9 +121,6 @@ char *list_installed_apps() {
 }
 
 char *fetch_app_icon(const char *bundle_path) {
-    // This would require implementing AFC service to access files on the device
-    // and extract the icon file from the app bundle
-    
-    // For now, return NULL as this requires significant additional code
+    // yall got this trust
     return NULL;
 }
