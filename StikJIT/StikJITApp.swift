@@ -12,7 +12,7 @@ import em_proxy
 struct HeartbeatApp: App {
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            MainTabView()
                 .onAppear {
                     startProxy()
                     startHeartbeatInBackground()

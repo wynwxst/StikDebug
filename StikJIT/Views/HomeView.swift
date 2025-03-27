@@ -8,69 +8,53 @@
 import SwiftUI
 
 struct HomeView: View {
+    @AppStorage("username") private var username = "User"
+    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
+    @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "#000000") ?? Color.primaryBackground
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @AppStorage("bundleID") private var bundleID: String = ""
     @State private var isProcessing = false
     @State private var isShowingInstalledApps = false
 
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground)
-                .edgesIgnoringSafeArea(.all)
+            selectedBackgroundColor                .edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 25) {
                 Spacer()
                 VStack(spacing: 5) {
-                    Text("StikJIT")
+                    Text("Welcome to StikJIT \(username)!")
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
                     
-                    Text("Enter the app's Bundle ID and enable JIT.")
+                    Text("Click enable jit to get started")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 40)
                 
-                RoundedTextField(placeholder: "Enter Bundle ID", text: $bundleID)
-                    .padding(.horizontal, 20)
-                
-                Button(action: {
-                    HapticFeedbackHelper.trigger()
-                    startJITInBackground(with: bundleID)
-                }) {
-                    Label(isProcessing ? "Enabling..." : "Enable JIT",
-                          systemImage: isProcessing ? "hourglass" : "bolt.fill")
-                        .font(.system(.title3, design: .rounded))
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(isProcessing ? Color.gray.opacity(0.6) : Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(16)
-                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .animation(.easeInOut(duration: 0.2), value: isProcessing)
-                }
-                .disabled(isProcessing)
-                .padding(.horizontal, 20)
-                
                 Button(action: {
                     isShowingInstalledApps = true
                 }) {
-                    Label("View Installed Apps", systemImage: "list.bullet")
+                    Label("Enable JIT", systemImage: "list.bullet")
                         .font(.system(.title3, design: .rounded))
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
+                        .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(16)
-                        .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 20)
                 
                 Spacer()
             }
             .padding()
+        }
+        .onReceive(timer) { _ in
+            refreshBackground()
         }
         .sheet(isPresented: $isShowingInstalledApps) {
             InstalledAppsListView { selectedBundle in
@@ -80,6 +64,10 @@ struct HomeView: View {
                 startJITInBackground(with: selectedBundle)
             }
         }
+    }
+    
+    private func refreshBackground() {
+        selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
     }
     
     private func startJITInBackground(with bundleID: String) {
@@ -130,6 +118,10 @@ class InstalledAppsViewModel: ObservableObject {
 }
 
 struct InstalledAppsListView: View {
+    @AppStorage("username") private var username = "User"
+    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
+    @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "#000000") ?? Color.primaryBackground
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @StateObject var viewModel = InstalledAppsViewModel()
     @Environment(\.dismiss) var dismiss
     @State private var searchText: String = ""
@@ -147,8 +139,7 @@ struct InstalledAppsListView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(.systemGroupedBackground)
-                    .edgesIgnoringSafeArea(.all)
+                selectedBackgroundColor                .edgesIgnoringSafeArea(.all)
                 
                 List {
                     ForEach(filteredApps, id: \.self) { app in
@@ -172,11 +163,18 @@ struct InstalledAppsListView: View {
                         }
                     }
                 }
-                .searchable(text: $searchText, prompt: "Search Bundle IDs")
+                .searchable(text: $searchText, prompt: "Search Apps")
+            }
+            .onReceive(timer) { _ in
+                refreshBackground()
             }
         }
     }
+    private func refreshBackground() {
+        selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
+    }
 }
+
 
 #Preview {
     HomeView()
