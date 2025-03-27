@@ -112,7 +112,10 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
+        .fileImporter(
+            isPresented: $isShowingPairingFilePicker, 
+            allowedContentTypes: [UTType(filenameExtension: "plist")!, UTType(filenameExtension: "mobiledevicepairing")!, .propertyList]
+        ) {result in
             switch result {
             
             case .success(let url):

@@ -19,7 +19,7 @@ char *list_installed_apps() {
     addr.sin_family = AF_INET;
     addr.sin_port = htons(LOCKDOWN_PORT);
     if (inet_pton(AF_INET, "10.7.0.1", &addr.sin_addr) <= 0) {
-        return strdup("{\"error\": \"Invalid IP address\"}");
+        return strdup("Error: Invalid IP address");
     }
 
     char pairingFilePath[1024];
@@ -37,21 +37,21 @@ char *list_installed_apps() {
     IdevicePairingFile *pairing_file = NULL;
     IdeviceErrorCode err = idevice_pairing_file_read(pairingFilePath, &pairing_file);
     if (err != IdeviceSuccess) {
-        return strdup("{\"error\": \"Failed to read pairing file\"}");
+        return strdup("Error: Failed to read pairing file");
     }
 
     TcpProviderHandle *provider = NULL;
     err = idevice_tcp_provider_new((struct sockaddr *)&addr, pairing_file, "ExampleProvider", &provider);
     if (err != IdeviceSuccess) {
         idevice_pairing_file_free(pairing_file);
-        return strdup("{\"error\": \"Failed to create TCP provider\"}");
+        return strdup("Error: Failed to create TCP provider");
     }
 
     InstallationProxyClientHandle *client = NULL;
     err = installation_proxy_connect_tcp(provider, &client);
     if (err != IdeviceSuccess) {
         tcp_provider_free(provider);
-        return strdup("{\"error\": \"Failed to connect to installation proxy\"}");
+        return strdup("Error: Failed to connect to installation proxy");
     }
 
     void *apps = NULL;
@@ -60,11 +60,11 @@ char *list_installed_apps() {
     if (err != IdeviceSuccess) {
         installation_proxy_client_free(client);
         tcp_provider_free(provider);
-        return strdup("{\"error\": \"Failed to get apps\"}");
+        return strdup("Error: Failed to get apps");
     }
 
     plist_t *app_list = (plist_t *)apps;
-    char *result = malloc(8192);  // Allocate memory for output
+    char *result = malloc(16384);  // Increased buffer size for additional data
     result[0] = '\0';
     strcat(result, "{\n");
 
@@ -142,4 +142,9 @@ char *list_installed_apps() {
     tcp_provider_free(provider);
 
     return result;
+}
+
+char *fetch_app_icon(const char *bundle_path) {
+    // yall got this trust
+    return NULL;
 }
