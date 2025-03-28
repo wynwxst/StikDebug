@@ -28,6 +28,9 @@ struct HomeView: View {
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
+    
+    @State private var viewDidAppeared = false
+    @State private var pendingBundleIdToEnableJIT : String? = nil
 
     var body: some View {
         ZStack {
@@ -209,7 +212,32 @@ struct HomeView: View {
                 startJITInBackground(with: selectedBundle)
             }
         }
+        .onOpenURL { url in
+            print(url.path())
+            if url.host() != "enable-jit" {
+                return
+            }
+            
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            if let bundleId = components?.queryItems?.first(where: { $0.name == "bundle-id" })?.value {
+                if viewDidAppeared {
+                    startJITInBackground(with: bundleId)
+                } else {
+                    pendingBundleIdToEnableJIT = bundleId
+                }
+            }
+            
+        }
+        .onAppear() {
+            viewDidAppeared = true
+            if let pendingBundleIdToEnableJIT {
+                startJITInBackground(with: pendingBundleIdToEnableJIT)
+                self.pendingBundleIdToEnableJIT = nil
+            }
+        }
     }
+    
+
     
     private func checkPairingFileExists() {
         pairingFileExists = FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path)
@@ -222,14 +250,9 @@ struct HomeView: View {
     private func startJITInBackground(with bundleID: String) {
         isProcessing = true
         DispatchQueue.global(qos: .background).async {
-            guard let cBundleID = strdup(bundleID) else {
-                DispatchQueue.main.async { isProcessing = false }
-                return
-            }
             
-            _ = debug_app(cBundleID)
+            JITEnableContext.shared().debugApp(withBundleID: bundleID, logger: nil)
             
-            free(cBundleID)
             DispatchQueue.main.async {
                 isProcessing = false
             }
@@ -245,38 +268,13 @@ class InstalledAppsViewModel: ObservableObject {
     }
     
     func loadApps() {
-        guard let rawPointer = list_installed_apps() else {
-            self.apps = [:]
-            return
-        }
-        
-        let output = String(cString: rawPointer)
-        free(rawPointer)
-
-        guard let jsonData = output.data(using: .utf8) else {
-            print("Error: Failed to convert string to data")
-            self.apps = [:]
-            return
-        }
-        
-        print(output)
-
-        // Decode the JSON into a Swift dictionary
         do {
-            let decoder = JSONDecoder()
-            let apps = try decoder.decode([String: String].self, from: jsonData)
-            if let app = apps.first, app.key == "error" {
-                self.apps = [:]
-            } else {
-                self.apps = apps
-            }
-            return
+            self.apps = try JITEnableContext.shared().getAppList()
         } catch {
-            print("Error: Failed to decode JSON - \(error)")
+            print(error)
             self.apps = [:]
-            return
         }
-        
+
     }
 }
 
