@@ -38,7 +38,7 @@ struct HomeView: View {
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
                     
-                    Text("Click enable JIT to get started")
+                    Text(pairingFileExists ? "Click enable JIT to get started" : "Pick pairing file to get started")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
