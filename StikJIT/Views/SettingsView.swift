@@ -2,7 +2,6 @@
 //  StikJIT
 //
 //  Created by Stephen on 3/27/25.
-//
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -144,18 +143,26 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
-                    
+
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
                         HStack {
                             Link("Stossy11", destination: URL(string: "https://github.com/Stossy11")!)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
                                 .foregroundColor(.primaryText)
                             Link("Neo", destination: URL(string: "https://github.com/neoarz")!)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
                                 .foregroundColor(.primaryText)
                             Link("Se2crid", destination: URL(string: "https://github.com/Se2crid")!)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
                                 .foregroundColor(.primaryText)
                             Link("HugeBlack", destination: URL(string: "https://github.com/HugeBlack")!)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
                                 .foregroundColor(.primaryText)
                         }
                     }
@@ -175,6 +182,7 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
                             UIApplication.shared.open(url)
@@ -184,7 +192,7 @@ struct SettingsView: View {
                             Text("Like this app? Check out StikNES!")
                                 .foregroundColor(.secondaryText)
                             Spacer()
-                            Image(systemName: "arrow.up.right.square")
+                            Image(systemName: "arrow.upright.square")
                                 .foregroundColor(.primaryText)
                         }
                     }
