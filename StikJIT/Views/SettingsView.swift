@@ -19,8 +19,6 @@ struct SettingsView: View {
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
-    
-    @State private var se2cridTapCount: Int = 0
 
     var body: some View {
         ZStack {
