@@ -143,7 +143,7 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
-
+                    
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
