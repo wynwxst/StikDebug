@@ -23,6 +23,9 @@ struct HomeView: View {
     @State private var isProcessing = false
     @State private var isShowingInstalledApps = false
     @State private var isShowingPairingFilePicker = false
+    
+    @State private var viewDidAppeared = false
+    @State private var pendingBundleIdToEnableJIT : String? = nil
 
     var body: some View {
         ZStack {
@@ -106,6 +109,29 @@ struct HomeView: View {
                 isShowingInstalledApps = false
                 HapticFeedbackHelper.trigger()
                 startJITInBackground(with: selectedBundle)
+            }
+        }
+        .onOpenURL { url in
+            print(url.path())
+            if url.host() != "enable-jit" {
+                return
+            }
+            
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            if let bundleId = components?.queryItems?.first(where: { $0.name == "bundle-id" })?.value {
+                if viewDidAppeared {
+                    startJITInBackground(with: bundleId)
+                } else {
+                    pendingBundleIdToEnableJIT = bundleId
+                }
+            }
+            
+        }
+        .onAppear() {
+            viewDidAppeared = true
+            if let pendingBundleIdToEnableJIT {
+                startJITInBackground(with: pendingBundleIdToEnableJIT)
+                self.pendingBundleIdToEnableJIT = nil
             }
         }
     }

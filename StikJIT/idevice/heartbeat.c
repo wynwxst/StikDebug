@@ -11,7 +11,7 @@
 #include <limits.h>
 #include "heartbeat.h"
 
-void startHeartbeat(IdevicePairingFile* pairing_file, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger) {
+void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provider, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger) {
     int currentSessionId = *heartbeatSessionId;
     logger("DEBUG: Initializing logger...");
     idevice_init_logger(Debug, Disabled, NULL);
@@ -29,9 +29,8 @@ void startHeartbeat(IdevicePairingFile* pairing_file, int* heartbeatSessionId, H
     IdeviceErrorCode err = IdeviceSuccess;
     
     logger("DEBUG: Creating TCP provider...");
-    TcpProviderHandle *provider = NULL;
     err = idevice_tcp_provider_new((struct sockaddr *)&addr, pairing_file,
-                                   "ExampleProvider", &provider);
+                                   "ExampleProvider", provider);
     if (err != IdeviceSuccess) {
         logger("DEBUG: Failed to create TCP provider: %d", err);
         completion(err, "Failed to create TCP provider");
@@ -41,13 +40,12 @@ void startHeartbeat(IdevicePairingFile* pairing_file, int* heartbeatSessionId, H
     
     logger("DEBUG: Connecting to installation proxy...");
     HeartbeatClientHandle *client = NULL;
-    err = heartbeat_connect_tcp(provider, &client);
+    err = heartbeat_connect_tcp(*provider, &client);
     if (err != IdeviceSuccess) {
         completion(err, "Failed to connect to Heartbeat");
         logger("DEBUG: Failed to connect to installation proxy: %d", err);
         return;
     }
-    tcp_provider_free(provider);
     logger("DEBUG: Connected to installation proxy successfully.");
     
     completion(0, "Heartbeat Completed");

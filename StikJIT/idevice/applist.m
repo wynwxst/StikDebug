@@ -14,30 +14,12 @@
 
 #include "applist.h"
 
-NSDictionary<NSString*, NSString*>* list_installed_apps(IdevicePairingFile* pairing_file, NSString** error) {
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(LOCKDOWN_PORT);
-    if (inet_pton(AF_INET, "10.7.0.1", &addr.sin_addr) <= 0) {
-        *error = @"Invalid IP address";
-        return nil;
-    }
-
+NSDictionary<NSString*, NSString*>* list_installed_apps(TcpProviderHandle* provider, NSString** error) {
     IdeviceErrorCode err = IdeviceSuccess;
-//    IdeviceErrorCode err = IdeviceSuccess;
-
-    TcpProviderHandle *provider = NULL;
-    err = idevice_tcp_provider_new((struct sockaddr *)&addr, pairing_file, "ExampleProvider", &provider);
-    if (err != IdeviceSuccess) {
-        *error = @"Failed to create TCP provider";
-        return nil;
-    }
 
     InstallationProxyClientHandle *client = NULL;
     err = installation_proxy_connect_tcp(provider, &client);
     if (err != IdeviceSuccess) {
-        tcp_provider_free(provider);
         *error = @"Failed to connect to installation proxy";
         return nil;
     }
@@ -47,7 +29,6 @@ NSDictionary<NSString*, NSString*>* list_installed_apps(IdevicePairingFile* pair
     err = installation_proxy_get_apps(client, NULL, NULL, 0, &apps, &apps_len);
     if (err != IdeviceSuccess) {
         installation_proxy_client_free(client);
-        tcp_provider_free(provider);
         *error = @"Failed to get apps";
         return nil;
     }
@@ -100,7 +81,6 @@ NSDictionary<NSString*, NSString*>* list_installed_apps(IdevicePairingFile* pair
 
 
     installation_proxy_client_free(client);
-    tcp_provider_free(provider);
 
     return ans;
 }

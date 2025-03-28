@@ -9,6 +9,6 @@
 #define APPLIST_H
 @import Foundation;
 
-NSDictionary<NSString*, NSString*>* list_installed_apps(IdevicePairingFile* pairing_file, NSString** error);
+NSDictionary<NSString*, NSString*>* list_installed_apps(TcpProviderHandle* provider, NSString** error);
 
 #endif /* APPLIST_H */

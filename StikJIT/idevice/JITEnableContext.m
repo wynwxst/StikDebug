@@ -18,6 +18,7 @@ JITEnableContext* sharedJITContext = nil;
 
 @implementation JITEnableContext {
     int heartbeatSessionId;
+    TcpProviderHandle* provider;
 }
 
 + (instancetype)shared {
@@ -79,38 +80,45 @@ JITEnableContext* sharedJITContext = nil;
         return;
     }
     self->heartbeatSessionId = arc4random();
-    startHeartbeat(pairingFile, &(self->heartbeatSessionId), ^(int result, const char *message) {
+    startHeartbeat(pairingFile, &(self->provider), &(self->heartbeatSessionId), ^(int result, const char *message) {
         completionHandler(result,[NSString stringWithCString:message encoding:NSASCIIStringEncoding]);
     }, [self createCLogger:logger]);
 }
 - (void)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger {
-    NSError* err = nil;
-    IdevicePairingFile* pairingFile = [self getPairingFileWithError:&err];
-    if(err) {
+    if(!provider) {
         if(logger) {
-            logger(err.localizedDescription);
+            logger(@"Provider not initialized!");
         }
+        NSLog(@"Provider not initialized!");
         return;
     }
     
-    debug_app(pairingFile, [bundleID UTF8String], [self createCLogger:logger]);
+    debug_app(provider, [bundleID UTF8String], [self createCLogger:logger]);
 }
 
 
 // bundleId:name
 - (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError**)error {
-    IdevicePairingFile* pairingFile = [self getPairingFileWithError:error];
-    if(*error) {
+    if(!provider) {
+        NSLog(@"Provider not initialized!");
+        *error = [self errorWithStr:@"Provider not initialized!" code:-1];
         return nil;
     }
     
     NSString* errorStr = nil;
-    NSDictionary<NSString*, NSString*>* ans = list_installed_apps(pairingFile, &errorStr);
+    NSDictionary<NSString*, NSString*>* ans = list_installed_apps(provider, &errorStr);
     if(errorStr){
         *error = [self errorWithStr:errorStr code:-17];
         return nil;
     } else {
         return ans;
+    }
+}
+
+- (void)dealloc {
+    self->heartbeatSessionId = arc4random();
+    if(provider) {
+        tcp_provider_free(provider);
     }
 }
 

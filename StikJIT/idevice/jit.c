@@ -19,48 +19,18 @@
 
 #include "jit.h"
 
-int debug_app(IdevicePairingFile* pairing, const char *bundle_id, LogFuncC logger) {
+int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC logger) {
     // Initialize logger
     idevice_init_logger(Debug, Disabled, NULL);
-    
-    // Hardcode device IP
-    const char *device_ip = "10.7.0.1";
-    
-    /*****************************************************************
-     * CoreDeviceProxy Setup
-     *****************************************************************/
-    logger("=== Setting up CoreDeviceProxy ===");
-    
-    // Create socket address
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(LOCKDOWN_PORT);
-    if (inet_pton(AF_INET, device_ip, &addr.sin_addr) != 1) {
-        logger("Invalid IP address");
-        return 1;
-    }
-    
     IdeviceErrorCode err = IdeviceSuccess;
-    
-    // Create TCP provider
-    TcpProviderHandle *tcp_provider = NULL;
-    err = idevice_tcp_provider_new((struct sockaddr *)&addr, pairing,
-                                   "ProcessDebugTest", &tcp_provider);
-    if (err != IdeviceSuccess) {
-        logger("Failed to create TCP provider: %d", err);
-        return 1;
-    }
     
     // Connect to CoreDeviceProxy
     CoreDeviceProxyHandle *core_device = NULL;
     err = core_device_proxy_connect_tcp(tcp_provider, &core_device);
     if (err != IdeviceSuccess) {
         logger("Failed to connect to CoreDeviceProxy: %d", err);
-        tcp_provider_free(tcp_provider);
         return 1;
     }
-    tcp_provider_free(tcp_provider);
     
     // Get server RSD port
     uint16_t rsd_port;
