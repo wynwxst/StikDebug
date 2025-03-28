@@ -97,7 +97,7 @@ JITEnableContext* sharedJITContext = nil;
 }
 
 
-// bundleId:name
+// apps may have different name, so we must use BnudleId as key. [bundleId:name]
 - (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError**)error {
     if(!provider) {
         NSLog(@"Provider not initialized!");
