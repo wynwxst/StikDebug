@@ -19,7 +19,7 @@ struct SettingsView: View {
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
     
-    // Developer profile image URLs - updated as requested
+    // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
         "Blu": "https://github.com/0-Blu.png",
         "jkcoxson": "https://github.com/jkcoxson.png",
@@ -36,7 +36,7 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    // App Logo and Username Section - No box, directly on background
+                    // App Logo and Username Section 
                     VStack(spacing: 16) {
                         // App Logo
                         Image(uiImage: UIImage(named: selectedAppIcon) ?? UIImage(named: "AppIcon") ?? UIImage())
@@ -177,13 +177,13 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            // Main Developers (side by side)
+                            // Main Developers 
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Developers")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
-                                // Main developers in a horizontal layout
+                              
                                 HStack(spacing: 16) {
                                     // App Creator
                                     VStack(spacing: 8) {
