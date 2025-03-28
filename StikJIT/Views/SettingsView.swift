@@ -1,9 +1,18 @@
+//  SettingsView.swift
+//  StikJIT
+//
+//  Created by Stephen on 3/27/25.
+//
+
+import SwiftUI
+import UniformTypeIdentifiers
+
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
-    
     @State private var isShowingPairingFilePicker = false
+
     @State private var selectedBackgroundColor: Color = Color.primaryBackground
     @State private var showIconPopover = false
     @State private var showPairingFileMessage = false
@@ -11,8 +20,8 @@ struct SettingsView: View {
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
     
-    // New state variable to track taps on "Se2crid"
-    @State private var se2cridTapCount = 0
+    // Easter Egg tap counter for "Se2crid"
+    @State private var se2cridTapCount: Int = 0
 
     var body: some View {
         ZStack {
@@ -147,17 +156,16 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                         Text("Neo")
                             .foregroundColor(.primaryText)
-                        // Modified "Se2crid" text to detect taps.
+                        // The Easter Egg: tapping "Se2crid" 7 times triggers a RickRoll!
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
                             .onTapGesture {
                                 se2cridTapCount += 1
                                 if se2cridTapCount == 7 {
+                                    se2cridTapCount = 0
                                     if let url = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
                                         UIApplication.shared.open(url)
                                     }
-                                    // Reset the count after triggering the easter egg.
-                                    se2cridTapCount = 0
                                 }
                             }
                     }
@@ -177,7 +185,6 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(Color.cardBackground)
-                    
                     Button(action: {
                         if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
                             UIApplication.shared.open(url)
@@ -201,7 +208,6 @@ struct SettingsView: View {
             .accentColor(.accentColor)
         }
         .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
-            // Existing file importer code...
             switch result {
             case .success(let url):
                 let fileManager = FileManager.default
@@ -303,4 +309,3 @@ struct SettingsView: View {
         .padding(.horizontal)
     }
 }
-
