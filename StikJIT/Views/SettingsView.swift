@@ -156,7 +156,6 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
-                    }
                         Text("HugeBlack")
                             .foregroundColor(.primaryText)
                     }
