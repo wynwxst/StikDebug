@@ -147,25 +147,27 @@ struct SettingsView: View {
                     }
                     .listRowBackground(Color.cardBackground)
                     
+    
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
-                        Spacer()
-                        Text("Stossy11")
-                            .foregroundColor(.primaryText)
-                        Text("Neo")
-                            .foregroundColor(.primaryText)
-                        Text("Se2crid")
-                            .foregroundColor(.primaryText)
-                            .onTapGesture {
-                                se2cridTapCount += 1
-                                if se2cridTapCount == 7 {
-                                    se2cridTapCount = 0
-                                    if let url = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
-                                        UIApplication.shared.open(url)
+                        HStack {
+                            Text("Stossy11")
+                                .foregroundColor(.primaryText)
+                            Text("Neo")
+                                .foregroundColor(.primaryText)
+                            Text("Se2crid")
+                                .foregroundColor(.primaryText)
+                                .onTapGesture {
+                                    se2cridTapCount += 1
+                                    if se2cridTapCount == 7 {
+                                        se2cridTapCount = 0
+                                        if let url = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
+                                            UIApplication.shared.open(url)
+                                        }
                                     }
                                 }
-                            }
+                        }
                     }
                     .listRowBackground(Color.cardBackground)
                     
