@@ -148,22 +148,48 @@ struct SettingsView: View {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
                         HStack {
-                            Link("Stossy11", destination: URL(string: "https://github.com/Stossy11")!)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .foregroundColor(.primaryText)
-                            Link("Neo", destination: URL(string: "https://github.com/neoarz")!)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .foregroundColor(.primaryText)
-                            Link("Se2crid", destination: URL(string: "https://github.com/Se2crid")!)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .foregroundColor(.primaryText)
-                            Link("HugeBlack", destination: URL(string: "https://github.com/HugeBlack")!)
-                                .frame(maxWidth: .infinity)
-                                .contentShape(Rectangle())
-                                .foregroundColor(.primaryText)
+                                                Button(action: {
+                                                    if let url = URL(string: "https://github.com/Stossy11") {
+                                                        UIApplication.shared.open(url)
+                                                    }
+                                                }) {
+                                                    Text("Stossy11")
+                                                        .frame(maxWidth: .infinity)
+                                                        .contentShape(Rectangle())
+                                                        .foregroundColor(.primaryText)
+                                                }
+                                                
+                                                Button(action: {
+                                                    if let url = URL(string: "https://github.com/neoarz") {
+                                                        UIApplication.shared.open(url)
+                                                    }
+                                                }) {
+                                                    Text("Neo")
+                                                        .frame(maxWidth: .infinity)
+                                                        .contentShape(Rectangle())
+                                                        .foregroundColor(.primaryText)
+                                                }
+                                                
+                                                Button(action: {
+                                                    if let url = URL(string: "https://github.com/Se2crid") {
+                                                        UIApplication.shared.open(url)
+                                                    }
+                                                }) {
+                                                    Text("Se2crid")
+                                                        .frame(maxWidth: .infinity)
+                                                        .contentShape(Rectangle())
+                                                        .foregroundColor(.primaryText)
+                                                }
+                                                
+                                                Button(action: {
+                                                    if let url = URL(string: "https://github.com/HugeBlack") {
+                                                        UIApplication.shared.open(url)
+                                                    }
+                                                }) {
+                                                    Text("HugeBlack")
+                                                        .frame(maxWidth: .infinity)
+                                                        .contentShape(Rectangle())
+                                                        .foregroundColor(.primaryText)
                         }
                     }
                     .listRowBackground(Color.cardBackground)
