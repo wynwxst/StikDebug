@@ -20,7 +20,6 @@ struct SettingsView: View {
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
     
-    // Easter Egg tap counter for "Se2crid"
     @State private var se2cridTapCount: Int = 0
 
     var body: some View {
@@ -156,7 +155,6 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                         Text("Neo")
                             .foregroundColor(.primaryText)
-                        // The Easter Egg: tapping "Se2crid" 7 times triggers a RickRoll!
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
                             .onTapGesture {
