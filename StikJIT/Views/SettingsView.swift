@@ -1,4 +1,3 @@
-//
 //  SettingsView.swift
 //  StikJIT
 //
@@ -20,6 +19,9 @@ struct SettingsView: View {
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
+    
+    // Easter Egg tap counter for "Se2crid"
+    @State private var se2cridTapCount: Int = 0
 
     var body: some View {
         ZStack {
@@ -144,8 +146,8 @@ struct SettingsView: View {
                         Text("jkcoxson")
                             .foregroundColor(.primaryText)
                     }
-                    
                     .listRowBackground(Color.cardBackground)
+                    
                     HStack {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
@@ -154,10 +156,21 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                         Text("Neo")
                             .foregroundColor(.primaryText)
+                        // The Easter Egg: tapping "Se2crid" 7 times triggers a RickRoll!
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
+                            .onTapGesture {
+                                se2cridTapCount += 1
+                                if se2cridTapCount == 7 {
+                                    se2cridTapCount = 0
+                                    if let url = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                            }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://github.com/0-Blu/StikJIT") {
                             UIApplication.shared.open(url)
@@ -194,9 +207,8 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
+        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
             switch result {
-            
             case .success(let url):
                 let fileManager = FileManager.default
                 let accessing = url.startAccessingSecurityScopedResource()
