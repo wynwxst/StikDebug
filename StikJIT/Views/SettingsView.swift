@@ -157,6 +157,9 @@ struct SettingsView: View {
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
                     }
+                        Text("HugeBlack")
+                            .foregroundColor(.primaryText)
+                    }
                     .listRowBackground(Color.cardBackground)
                     Button(action: {
                         if let url = URL(string: "https://github.com/0-Blu/StikJIT") {
