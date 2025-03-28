@@ -117,14 +117,9 @@ struct HomeView: View {
     private func startJITInBackground(with bundleID: String) {
         isProcessing = true
         DispatchQueue.global(qos: .background).async {
-            guard let cBundleID = strdup(bundleID) else {
-                DispatchQueue.main.async { isProcessing = false }
-                return
-            }
             
-            _ = debug_app(cBundleID)
+            JITEnableContext.shared().debugApp(withBundleID: bundleID, logger: nil)
             
-            free(cBundleID)
             DispatchQueue.main.async {
                 isProcessing = false
             }
@@ -140,38 +135,13 @@ class InstalledAppsViewModel: ObservableObject {
     }
     
     func loadApps() {
-        guard let rawPointer = list_installed_apps() else {
-            self.apps = [:]
-            return
-        }
-        
-        let output = String(cString: rawPointer)
-        free(rawPointer)
-
-        guard let jsonData = output.data(using: .utf8) else {
-            print("Error: Failed to convert string to data")
-            self.apps = [:]
-            return
-        }
-        
-        print(output)
-
-        // Decode the JSON into a Swift dictionary
         do {
-            let decoder = JSONDecoder()
-            let apps = try decoder.decode([String: String].self, from: jsonData)
-            if let app = apps.first, app.key == "error" {
-                self.apps = [:]
-            } else {
-                self.apps = apps
-            }
-            return
+            self.apps = try JITEnableContext.shared().getAppList()
         } catch {
-            print("Error: Failed to decode JSON - \(error)")
+            print(error)
             self.apps = [:]
-            return
         }
-        
+
     }
 }
 
