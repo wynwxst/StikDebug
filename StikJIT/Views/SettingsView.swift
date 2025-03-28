@@ -116,6 +116,20 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(Color.cardBackground)
+                    Button(action: {
+                        if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        HStack {
+                            Text("Like this app? Check out StikNES!")
+                                .foregroundColor(.secondaryText)
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundColor(.primaryText)
+                        }
+                    }
+                    .listRowBackground(Color.cardBackground)
                 }
             }
             .background(selectedBackgroundColor)
