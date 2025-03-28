@@ -149,7 +149,7 @@ struct SettingsView: View {
                         Text("idevice & em_proxy Creator:")
                             .foregroundColor(.secondaryText)
                         Spacer()
-                        Link("jkcoxson", destination: URL(string: "https://github.com/jkcoxson")!)
+                        Link("jkcoxson", destination: URL(string: "https://jkcoxson.com")!)
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
@@ -171,7 +171,7 @@ struct SettingsView: View {
                             .buttonStyle(PlainButtonStyle())
                             
                             Button(action: {
-                                if let url = URL(string: "https://github.com/neoarz") {
+                                if let url = URL(string: "https://neoarz.xyz/") {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
