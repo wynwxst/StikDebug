@@ -1,25 +1,18 @@
-//
-//  SettingsView.swift
-//  StikJIT
-//
-//  Created by Stephen on 3/27/25.
-//
-
-import SwiftUI
-import UniformTypeIdentifiers
-
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
+    
     @State private var isShowingPairingFilePicker = false
-
     @State private var selectedBackgroundColor: Color = Color.primaryBackground
     @State private var showIconPopover = false
     @State private var showPairingFileMessage = false
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
+    
+    // New state variable to track taps on "Se2crid"
+    @State private var se2cridTapCount = 0
 
     var body: some View {
         ZStack {
@@ -144,8 +137,8 @@ struct SettingsView: View {
                         Text("jkcoxson")
                             .foregroundColor(.primaryText)
                     }
-                    
                     .listRowBackground(Color.cardBackground)
+                    
                     HStack {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
@@ -154,10 +147,22 @@ struct SettingsView: View {
                             .foregroundColor(.primaryText)
                         Text("Neo")
                             .foregroundColor(.primaryText)
+                        // Modified "Se2crid" text to detect taps.
                         Text("Se2crid")
                             .foregroundColor(.primaryText)
+                            .onTapGesture {
+                                se2cridTapCount += 1
+                                if se2cridTapCount == 7 {
+                                    if let url = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                    // Reset the count after triggering the easter egg.
+                                    se2cridTapCount = 0
+                                }
+                            }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://github.com/0-Blu/StikJIT") {
                             UIApplication.shared.open(url)
@@ -172,6 +177,7 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
                             UIApplication.shared.open(url)
@@ -194,9 +200,9 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
+        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
+            // Existing file importer code...
             switch result {
-            
             case .success(let url):
                 let fileManager = FileManager.default
                 let accessing = url.startAccessingSecurityScopedResource()
@@ -297,3 +303,4 @@ struct SettingsView: View {
         .padding(.horizontal)
     }
 }
+
