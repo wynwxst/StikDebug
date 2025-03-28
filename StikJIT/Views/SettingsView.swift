@@ -162,6 +162,9 @@ struct SettingsView: View {
                                 .foregroundColor(.primaryText)
                         }
                     }
+                        Text("HugeBlack")
+                            .foregroundColor(.primaryText)
+                    }
                     .listRowBackground(Color.cardBackground)
                     
                     Button(action: {
