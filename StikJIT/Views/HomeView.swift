@@ -160,11 +160,10 @@ struct HomeView: View {
                         startHeartbeatInBackground()
                         
                         // Create timer to update progress instead of sleeping
-                        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+                        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
                             DispatchQueue.main.async {
-                                // Increment progress
                                 if importProgress < 1.0 {
-                                    importProgress += 0.05
+                                    importProgress += 0.25
                                 } else {
                                     timer.invalidate()
                                     isImportingFile = false

@@ -215,10 +215,10 @@ struct SettingsView: View {
                             importProgress = 0.0
                         }
                         
-                        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+                        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
                             DispatchQueue.main.async {
                                 if importProgress < 1.0 {
-                                    importProgress += 0.05
+                                    importProgress += 0.25
                                 } else {
                                     timer.invalidate()
                                     isImportingFile = false
