@@ -311,7 +311,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Helper Methods
 
     private func loadCustomBackgroundColor() {
         selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
