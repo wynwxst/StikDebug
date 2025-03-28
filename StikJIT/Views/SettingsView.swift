@@ -147,7 +147,7 @@ struct SettingsView: View {
                     }
                     .listRowBackground(Color.cardBackground)
                     
-                    HStack {
+                    VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
                         Spacer()
