@@ -147,7 +147,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
-                        HStack {
+                         HStack {
                                                 Button(action: {
                                                     if let url = URL(string: "https://github.com/Stossy11") {
                                                         UIApplication.shared.open(url)
@@ -155,9 +155,11 @@ struct SettingsView: View {
                                                 }) {
                                                     Text("Stossy11")
                                                         .frame(maxWidth: .infinity)
+                                                        .padding(.vertical, 8)
                                                         .contentShape(Rectangle())
                                                         .foregroundColor(.primaryText)
                                                 }
+                                                .buttonStyle(PlainButtonStyle())
                                                 
                                                 Button(action: {
                                                     if let url = URL(string: "https://github.com/neoarz") {
@@ -166,9 +168,11 @@ struct SettingsView: View {
                                                 }) {
                                                     Text("Neo")
                                                         .frame(maxWidth: .infinity)
+                                                        .padding(.vertical, 8)
                                                         .contentShape(Rectangle())
                                                         .foregroundColor(.primaryText)
                                                 }
+                                                .buttonStyle(PlainButtonStyle())
                                                 
                                                 Button(action: {
                                                     if let url = URL(string: "https://github.com/Se2crid") {
@@ -177,9 +181,11 @@ struct SettingsView: View {
                                                 }) {
                                                     Text("Se2crid")
                                                         .frame(maxWidth: .infinity)
+                                                        .padding(.vertical, 8)
                                                         .contentShape(Rectangle())
                                                         .foregroundColor(.primaryText)
                                                 }
+                                                .buttonStyle(PlainButtonStyle())
                                                 
                                                 Button(action: {
                                                     if let url = URL(string: "https://github.com/HugeBlack") {
@@ -188,10 +194,11 @@ struct SettingsView: View {
                                                 }) {
                                                     Text("HugeBlack")
                                                         .frame(maxWidth: .infinity)
+                                                        .padding(.vertical, 8)
                                                         .contentShape(Rectangle())
                                                         .foregroundColor(.primaryText)
                                                 }
-                        }
+                                                .buttonStyle(PlainButtonStyle())
                     }
                     .listRowBackground(Color.cardBackground)
                     
