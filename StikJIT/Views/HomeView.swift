@@ -26,6 +26,8 @@ struct HomeView: View {
     @State private var pairingFileExists: Bool = false
     @State private var showPairingFileMessage = false
     @State private var pairingFileIsValid = false
+    @State private var isImportingFile = false
+    @State private var importProgress: Float = 0.0
 
     var body: some View {
         ZStack {
@@ -73,6 +75,37 @@ struct HomeView: View {
                 
                 // Status message area - keeps layout consistent
                 ZStack {
+                    // Progress bar for importing file
+                    if isImportingFile {
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("Processing pairing file...")
+                                    .font(.system(.caption, design: .rounded))
+                                    .foregroundColor(.secondaryText)
+                                Spacer()
+                                Text("\(Int(importProgress * 100))%")
+                                    .font(.system(.caption, design: .rounded))
+                                    .foregroundColor(.secondaryText)
+                            }
+                            
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.black.opacity(0.2))
+                                        .frame(height: 8)
+                                    
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.green)
+                                        .frame(width: geometry.size.width * CGFloat(importProgress), height: 8)
+                                        .animation(.linear(duration: 0.3), value: importProgress)
+                                }
+                            }
+                            .frame(height: 8)
+                        }
+                        .padding(.horizontal, 40)
+                    }
+                    
+                    // Success message
                     if showPairingFileMessage && pairingFileIsValid {
                         Text("✓ Pairing file successfully imported")
                             .font(.system(.callout, design: .rounded))
@@ -87,7 +120,7 @@ struct HomeView: View {
                     // Invisible text to reserve space - no layout jumps
                     Text(" ").opacity(0)
                 }
-                .frame(height: 30)
+                .frame(height: isImportingFile ? 60 : 30)  // Adjust height based on what's showing
                 
                 Spacer()
             }
@@ -116,30 +149,44 @@ struct HomeView: View {
                         try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                         print("File copied successfully!")
                         
-                        // Show success message first
+                        // Show progress bar and initialize progress
                         DispatchQueue.main.async {
-                            // Set pairing file exists and show success message
+                            isImportingFile = true
+                            importProgress = 0.0
                             pairingFileExists = true
-                            pairingFileIsValid = true
-                            
-                            // Show success message with animation
-                            withAnimation {
-                                showPairingFileMessage = true
-                            }
-                            
-                            // Schedule hiding of message
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                withAnimation {
-                                    showPairingFileMessage = false
+                        }
+                        
+                        // Start heartbeat in background
+                        startHeartbeatInBackground()
+                        
+                        // Create timer to update progress instead of sleeping
+                        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
+                            DispatchQueue.main.async {
+                                if importProgress < 1.0 {
+                                    importProgress += 0.25
+                                } else {
+                                    timer.invalidate()
+                                    isImportingFile = false
+                                    pairingFileIsValid = true
+                                    
+                                    // Show success message
+                                    withAnimation {
+                                        showPairingFileMessage = true
+                                    }
+                                    
+                                    // Hide message after delay
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                        withAnimation {
+                                            showPairingFileMessage = false
+                                        }
+                                    }
                                 }
                             }
                         }
                         
-                        // Start heartbeat and then sleep
-                        startHeartbeatInBackground()
+                        // Ensure timer keeps running
+                        RunLoop.current.add(progressTimer, forMode: .common)
                         
-                        // Moving this after the UI updates
-                        Thread.sleep(forTimeInterval: 5)
                     } catch {
                         print("Error copying file: \(error)")
                     }
