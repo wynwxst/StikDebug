@@ -190,6 +190,7 @@ struct SettingsView: View {
                                                         .frame(maxWidth: .infinity)
                                                         .contentShape(Rectangle())
                                                         .foregroundColor(.primaryText)
+                                                }
                         }
                     }
                     .listRowBackground(Color.cardBackground)
