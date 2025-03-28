@@ -25,7 +25,9 @@ struct SettingsView: View {
                 .ignoresSafeArea()
 
             Form {
-                Section(header: Text("General").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("General")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Label("", systemImage: "person.fill")
                             .foregroundColor(.primaryText)
@@ -43,7 +45,9 @@ struct SettingsView: View {
                     .listRowBackground(Color.cardBackground)
                 }
 
-                Section(header: Text("Appearance").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("Appearance")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     ColorPicker("Background Color", selection: $selectedBackgroundColor)
                         .onChange(of: selectedBackgroundColor) { newColor in
                             saveCustomBackgroundColor(newColor)
@@ -52,7 +56,9 @@ struct SettingsView: View {
                         .foregroundColor(.primaryText)
                 }
                 
-                Section(header: Text("Pairing File").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("Pairing File")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Button {
                             isShowingPairingFilePicker = true
@@ -109,14 +115,18 @@ struct SettingsView: View {
                         .listRowBackground(Color.cardBackground)
                         .transition(
                             .asymmetric(
-                                insertion: .scale(scale: 0.9).combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.7)),
+                                insertion: .scale(scale: 0.9)
+                                    .combined(with: .opacity)
+                                    .animation(.spring(response: 0.4, dampingFraction: 0.7)),
                                 removal: .opacity.animation(.easeOut(duration: 0.25))
                             )
                         )
                     }
                 }
 
-                Section(header: Text("About").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("About")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Text("Version:")
                             .foregroundColor(.secondaryText)
@@ -147,58 +157,59 @@ struct SettingsView: View {
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
-                         HStack {
-                                                Button(action: {
-                                                    if let url = URL(string: "https://github.com/Stossy11") {
-                                                        UIApplication.shared.open(url)
-                                                    }
-                                                }) {
-                                                    Text("Stossy11")
-                                                        .frame(maxWidth: .infinity)
-                                                        .padding(.vertical, 8)
-                                                        .contentShape(Rectangle())
-                                                        .foregroundColor(.primaryText)
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                                
-                                                Button(action: {
-                                                    if let url = URL(string: "https://github.com/neoarz") {
-                                                        UIApplication.shared.open(url)
-                                                    }
-                                                }) {
-                                                    Text("Neo")
-                                                        .frame(maxWidth: .infinity)
-                                                        .padding(.vertical, 8)
-                                                        .contentShape(Rectangle())
-                                                        .foregroundColor(.primaryText)
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                                
-                                                Button(action: {
-                                                    if let url = URL(string: "https://github.com/Se2crid") {
-                                                        UIApplication.shared.open(url)
-                                                    }
-                                                }) {
-                                                    Text("Se2crid")
-                                                        .frame(maxWidth: .infinity)
-                                                        .padding(.vertical, 8)
-                                                        .contentShape(Rectangle())
-                                                        .foregroundColor(.primaryText)
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                                
-                                                Button(action: {
-                                                    if let url = URL(string: "https://github.com/HugeBlack") {
-                                                        UIApplication.shared.open(url)
-                                                    }
-                                                }) {
-                                                    Text("HugeBlack")
-                                                        .frame(maxWidth: .infinity)
-                                                        .padding(.vertical, 8)
-                                                        .contentShape(Rectangle())
-                                                        .foregroundColor(.primaryText)
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
+                        HStack {
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/Stossy11") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Stossy11")
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/neoarz") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Neo")
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/Se2crid") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Se2crid")
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/HugeBlack") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("HugeBlack")
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                     .listRowBackground(Color.cardBackground)
                     
@@ -239,7 +250,8 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
+        .fileImporter(isPresented: $isShowingPairingFilePicker,
+                      allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
             switch result {
             case .success(let url):
                 let fileManager = FileManager.default
@@ -247,11 +259,12 @@ struct SettingsView: View {
                 
                 if fileManager.fileExists(atPath: url.path) {
                     do {
-                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        let destination = URL.documentsDirectory.appendingPathComponent("pairingFile.plist")
+                        if fileManager.fileExists(atPath: destination.path) {
+                            try fileManager.removeItem(at: destination)
                         }
                         
-                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        try fileManager.copyItem(at: url, to: destination)
                         print("File copied successfully!")
                         
                         DispatchQueue.main.async {
@@ -282,7 +295,6 @@ struct SettingsView: View {
                         }
                         
                         startHeartbeatInBackground()
-                        
                         RunLoop.current.add(progressTimer, forMode: .common)
                     } catch {
                         print("Error copying file: \(error)")
@@ -302,6 +314,8 @@ struct SettingsView: View {
             loadCustomBackgroundColor()
         }
     }
+
+    // MARK: - Helper Methods
 
     private func loadCustomBackgroundColor() {
         selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
@@ -341,3 +355,4 @@ struct SettingsView: View {
         .padding(.horizontal)
     }
 }
+
