@@ -154,18 +154,17 @@ struct SettingsView: View {
                     }
                     .listRowBackground(Color.cardBackground)
                     
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
-                        HStack {
+                        HStack(spacing: 8) {
                             Button(action: {
                                 if let url = URL(string: "https://github.com/Stossy11") {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
                                 Text("Stossy11")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 4)
                                     .contentShape(Rectangle())
                                     .foregroundColor(.primaryText)
                             }
@@ -177,8 +176,7 @@ struct SettingsView: View {
                                 }
                             }) {
                                 Text("Neo")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 4)
                                     .contentShape(Rectangle())
                                     .foregroundColor(.primaryText)
                             }
@@ -190,8 +188,7 @@ struct SettingsView: View {
                                 }
                             }) {
                                 Text("Se2crid")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 4)
                                     .contentShape(Rectangle())
                                     .foregroundColor(.primaryText)
                             }
@@ -203,8 +200,7 @@ struct SettingsView: View {
                                 }
                             }) {
                                 Text("HugeBlack")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 4)
                                     .contentShape(Rectangle())
                                     .foregroundColor(.primaryText)
                             }
@@ -355,4 +351,3 @@ struct SettingsView: View {
         .padding(.horizontal)
     }
 }
-
