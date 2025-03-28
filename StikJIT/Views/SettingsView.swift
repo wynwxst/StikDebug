@@ -167,6 +167,8 @@ struct SettingsView: View {
                                         }
                                     }
                                 }
+                            Text("HugeBlack") 
+                                .foregroundColor(.primaryText)
                         }
                     }
                     .listRowBackground(Color.cardBackground)
