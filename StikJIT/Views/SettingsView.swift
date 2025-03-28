@@ -131,7 +131,7 @@ struct SettingsView: View {
                         Text("App Creator:")
                             .foregroundColor(.secondaryText)
                         Spacer()
-                        Text("Stephen")
+                        Link("Stephen", destination: URL(string: "https://github.com/0-Blu")!)
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
@@ -140,23 +140,22 @@ struct SettingsView: View {
                         Text("idevice & em_proxy Creator:")
                             .foregroundColor(.secondaryText)
                         Spacer()
-                        Text("jkcoxson")
+                        Link("jkcoxson", destination: URL(string: "https://github.com/jkcoxson")!)
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
                     
-    
                     VStack(alignment: .leading) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
                         HStack {
-                            Text("Stossy11")
+                            Link("Stossy11", destination: URL(string: "https://github.com/Stossy11")!)
                                 .foregroundColor(.primaryText)
-                            Text("Neo")
+                            Link("Neo", destination: URL(string: "https://github.com/neoarz")!)
                                 .foregroundColor(.primaryText)
-                            Text("Se2crid")
+                            Link("Se2crid", destination: URL(string: "https://github.com/Se2crid")!)
                                 .foregroundColor(.primaryText)
-                            Text("HugeBlack") 
+                            Link("HugeBlack", destination: URL(string: "https://github.com/HugeBlack")!)
                                 .foregroundColor(.primaryText)
                         }
                     }
