@@ -1,9 +1,7 @@
-//
 //  SettingsView.swift
 //  StikJIT
 //
 //  Created by Stephen on 3/27/25.
-//
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -27,7 +25,9 @@ struct SettingsView: View {
                 .ignoresSafeArea()
 
             Form {
-                Section(header: Text("General").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("General")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Label("", systemImage: "person.fill")
                             .foregroundColor(.primaryText)
@@ -45,7 +45,9 @@ struct SettingsView: View {
                     .listRowBackground(Color.cardBackground)
                 }
 
-                Section(header: Text("Appearance").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("Appearance")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     ColorPicker("Background Color", selection: $selectedBackgroundColor)
                         .onChange(of: selectedBackgroundColor) { newColor in
                             saveCustomBackgroundColor(newColor)
@@ -54,7 +56,9 @@ struct SettingsView: View {
                         .foregroundColor(.primaryText)
                 }
                 
-                Section(header: Text("Pairing File").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("Pairing File")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Button {
                             isShowingPairingFilePicker = true
@@ -111,14 +115,18 @@ struct SettingsView: View {
                         .listRowBackground(Color.cardBackground)
                         .transition(
                             .asymmetric(
-                                insertion: .scale(scale: 0.9).combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.7)),
+                                insertion: .scale(scale: 0.9)
+                                    .combined(with: .opacity)
+                                    .animation(.spring(response: 0.4, dampingFraction: 0.7)),
                                 removal: .opacity.animation(.easeOut(duration: 0.25))
                             )
                         )
                     }
                 }
 
-                Section(header: Text("About").font(.headline).foregroundColor(.primaryText)) {
+                Section(header: Text("About")
+                            .font(.headline)
+                            .foregroundColor(.primaryText)) {
                     HStack {
                         Text("Version:")
                             .foregroundColor(.secondaryText)
@@ -132,7 +140,7 @@ struct SettingsView: View {
                         Text("App Creator:")
                             .foregroundColor(.secondaryText)
                         Spacer()
-                        Text("Stephen")
+                        Link("Stephen", destination: URL(string: "https://github.com/0-Blu")!)
                             .foregroundColor(.primaryText)
                     }
                     .listRowBackground(Color.cardBackground)
@@ -141,25 +149,66 @@ struct SettingsView: View {
                         Text("idevice & em_proxy Creator:")
                             .foregroundColor(.secondaryText)
                         Spacer()
-                        Text("jkcoxson")
+                        Link("jkcoxson", destination: URL(string: "https://github.com/jkcoxson")!)
                             .foregroundColor(.primaryText)
                     }
-                    
                     .listRowBackground(Color.cardBackground)
-                    HStack {
+                    
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Collaborators:")
                             .foregroundColor(.secondaryText)
-                        Spacer()
-                        Text("Stossy11")
-                            .foregroundColor(.primaryText)
-                        Text("Neo")
-                            .foregroundColor(.primaryText)
-                        Text("Se2crid")
-                            .foregroundColor(.primaryText)
-                        Text("HugeBlack")
-                            .foregroundColor(.primaryText)
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/Stossy11") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Stossy11")
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/neoarz") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Neo")
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/Se2crid") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("Se2crid")
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://github.com/HugeBlack") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text("HugeBlack")
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .foregroundColor(.primaryText)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://github.com/0-Blu/StikJIT") {
                             UIApplication.shared.open(url)
@@ -174,6 +223,7 @@ struct SettingsView: View {
                         }
                     }
                     .listRowBackground(Color.cardBackground)
+                    
                     Button(action: {
                         if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
                             UIApplication.shared.open(url)
@@ -183,7 +233,7 @@ struct SettingsView: View {
                             Text("Like this app? Check out StikNES!")
                                 .foregroundColor(.secondaryText)
                             Spacer()
-                            Image(systemName: "arrow.up.right.square")
+                            Image(systemName: "arrow.upright.square")
                                 .foregroundColor(.primaryText)
                         }
                     }
@@ -196,20 +246,21 @@ struct SettingsView: View {
             .font(.bodyFont)
             .accentColor(.accentColor)
         }
-        .fileImporter(isPresented: $isShowingPairingFilePicker, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
+        .fileImporter(isPresented: $isShowingPairingFilePicker,
+                      allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
             switch result {
-            
             case .success(let url):
                 let fileManager = FileManager.default
                 let accessing = url.startAccessingSecurityScopedResource()
                 
                 if fileManager.fileExists(atPath: url.path) {
                     do {
-                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        let destination = URL.documentsDirectory.appendingPathComponent("pairingFile.plist")
+                        if fileManager.fileExists(atPath: destination.path) {
+                            try fileManager.removeItem(at: destination)
                         }
                         
-                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                        try fileManager.copyItem(at: url, to: destination)
                         print("File copied successfully!")
                         
                         DispatchQueue.main.async {
@@ -240,7 +291,6 @@ struct SettingsView: View {
                         }
                         
                         startHeartbeatInBackground()
-                        
                         RunLoop.current.add(progressTimer, forMode: .common)
                     } catch {
                         print("Error copying file: \(error)")
@@ -260,6 +310,7 @@ struct SettingsView: View {
             loadCustomBackgroundColor()
         }
     }
+
 
     private func loadCustomBackgroundColor() {
         selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
