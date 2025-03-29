@@ -173,6 +173,7 @@ struct SettingsView: View {
                         .padding(.horizontal, 16)
                     }
                     
+                    // Developer Disk Image section
                     SettingsCard {
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Developer Disk Image")
@@ -180,45 +181,58 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            if self.mounted || (mountProg.mountProgress == 100) {
-                                HStack {
-                                    Spacer()
-                                    Text("✓ Developer Disk Image Mounted Successfully!")
-                                        .font(.system(.callout, design: .rounded))
-                                        .foregroundColor(.green)
-                                        .padding(.vertical, 10)
-                                        .padding(.horizontal, 18)
-                                        .background(Color.green.opacity(0.1))
-                                        .cornerRadius(10)
-                                    Spacer()
-                                }
-                                .padding(.top, 6)
-                            } else {
-                                HStack {
-                                    Text("Mounting Developer Disk Image...")
-                                        .font(.system(.caption, design: .rounded))
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    Text("\(Int(mountProg.mountProgress))%")
-                                        .font(.system(.caption, design: .rounded))
-                                        .foregroundColor(.secondary)
-                                }
+                            // Status indicator with icon
+                            HStack(spacing: 12) {
+                                Image(systemName: mounted || (mountProg.mountProgress == 100) ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(mounted || (mountProg.mountProgress == 100) ? .green : .red)
                                 
-                                GeometryReader { geometry in
-                                    ZStack(alignment: .leading) {
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(Color(UIColor.tertiarySystemFill))
-                                            .frame(height: 10)
-                                        
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(Color.green)
-                                            .frame(width: geometry.size.width * CGFloat(mountProg.mountProgress), height: 10)
-                                            .animation(.linear(duration: 0.3), value: mountProg.mountProgress)
-                                    }
-                                }
-                                .frame(height: 10)
+                                Text(mounted || (mountProg.mountProgress == 100) ? "Successfully Mounted" : "Not Mounted")
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.medium)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(UIColor.tertiarySystemBackground))
+                            .cornerRadius(12)
+                            
+                            // Helper text shown separately below the status indicator
+                            if !(mounted || (mountProg.mountProgress == 100)) {
+                                Text("Import pairing file and restart the app to mount DDI")
+                                    .font(.system(.caption, design: .rounded))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 4)
                             }
                             
+                            // Only show progress if actively mounting
+                            if mountProg.mountProgress > 0 && mountProg.mountProgress < 100 && !mounted {
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Text("Mounting in progress...")
+                                            .font(.system(.caption, design: .rounded))
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Text("\(Int(mountProg.mountProgress))%")
+                                            .font(.system(.caption, design: .rounded))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    GeometryReader { geometry in
+                                        ZStack(alignment: .leading) {
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(Color(UIColor.tertiarySystemFill))
+                                                .frame(height: 8)
+                                            
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(Color.green)
+                                                .frame(width: geometry.size.width * CGFloat(mountProg.mountProgress / 100.0), height: 8)
+                                                .animation(.linear(duration: 0.3), value: mountProg.mountProgress)
+                                        }
+                                    }
+                                    .frame(height: 8)
+                                }
+                                .padding(.top, 6)
+                            }
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
