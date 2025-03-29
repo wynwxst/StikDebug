@@ -42,27 +42,34 @@ struct HeartbeatApp: App {
             if isLoading {
                 LoadingView()
                     .onAppear {
-                        startProxy()
-                        if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                                if pubHeartBeat {
-                                    isLoading = false
-                                    timer.invalidate()
-                                } else {
-                                    if let error {
-                                        if error == InvalidHostID.rawValue {
-                                            isPairing = true
+                        startProxy() { result, error in
+                            if result {
+                                if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                                    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                                        if pubHeartBeat {
+                                            isLoading = false
+                                            timer.invalidate()
                                         } else {
-                                            startHeartbeatInBackground()
+                                            if let error {
+                                                if error == InvalidHostID.rawValue {
+                                                    isPairing = true
+                                                } else {
+                                                    startHeartbeatInBackground()
+                                                }
+                                                self.error = nil
+                                            }
                                         }
-                                        self.error = nil
                                     }
+                                    
+                                    startHeartbeatInBackground()
+                                } else {
+                                    isLoading = false
+                                }
+                            } else if let error {
+                                showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { cool in
+                                    
                                 }
                             }
-                            
-                            startHeartbeatInBackground()
-                        } else {
-                            isLoading = false
                         }
                     }
                     .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
@@ -112,7 +119,7 @@ struct HeartbeatApp: App {
     }
     
 
-    func startProxy() {
+    func startProxy(callback: @escaping (Bool, Int?) -> Void) {
         let port = 51820
         let bindAddr = "127.0.0.1:\(port)"
         
@@ -122,8 +129,10 @@ struct HeartbeatApp: App {
             DispatchQueue.main.async {
                 if result == 0 {
                     print("DEBUG: em_proxy started successfully on port \(port)")
+                    callback(true, nil)
                 } else {
                     print("DEBUG: Failed to start em_proxy")
+                    callback(false, Int(result))
                 }
             }
         }
@@ -233,8 +242,18 @@ func startHeartbeatInBackground() {
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 
-                showAlert(title: "HeartBeat Error", message: "\(message ?? "") (\(result))", showOk: true) { _ in
-                    startHeartbeatInBackground()
+                DispatchQueue.main.async {
+                    if let mainWindow = UIApplication.shared.windows.last {
+                        let alert = UIAlertController(title: "Heartbeat Error", message: "\(message ?? "") (\(result))", preferredStyle: .alert)
+                        
+                        let tryAgainAction = UIAlertAction(title: "Try Again", style: .default) { _ in
+                            startHeartbeatInBackground()
+                        }
+
+                        alert.addAction(tryAgainAction)
+                        
+                        mainWindow.rootViewController?.present(alert, animated: true, completion: nil)
+                    }
                 }
             }
         }
