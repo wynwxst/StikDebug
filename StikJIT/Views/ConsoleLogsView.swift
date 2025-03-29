@@ -14,6 +14,13 @@ struct ConsoleLogsView: View {
     @State private var autoScroll = true
     @State private var scrollView: ScrollViewProxy? = nil
     
+    // Add these state variables for alert handling
+    @State private var showingExportAlert = false
+    @State private var showingCopyAlert = false
+    @State private var alertMessage = ""
+    @State private var alertTitle = ""
+    @State private var isError = false
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -82,42 +89,50 @@ struct ConsoleLogsView: View {
                         
                         // Action buttons with dark background
                         VStack(spacing: 1) {
-
+                            // Export button
                             Button(action: {
-                                let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
+                                // Create logs content with device information
+                                var logsContent = "=== DEVICE INFORMATION ===\n"
+                                logsContent += "Version: \(UIDevice.current.systemVersion)\n"
+                                logsContent += "Name: \(UIDevice.current.name)\n" 
+                                logsContent += "Model: \(UIDevice.current.model)\n"
+                                logsContent += "StikJIT Version: App Version: 1.0\n\n"
+                                logsContent += "=== LOG ENTRIES ===\n"
                                 
-                                // Create a temporary file for the logs
-                                let tempDirectoryURL = FileManager.default.temporaryDirectory
-                                let tempFileURL = tempDirectoryURL.appendingPathComponent("StikJIT_Logs_\(Date().timeIntervalSince1970).txt")
+                                // Add all log entries with proper formatting
+                                logsContent += logManager.logs.map { 
+                                    "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" 
+                                }.joined(separator: "\n")
+                                
+                                // Save to document directory (accessible in Files app)
+                                let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                                let dateFormatter = DateFormatter()
+                                dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                                let timestamp = dateFormatter.string(from: Date())
+                                let fileURL = documentsDirectory.appendingPathComponent("StikJIT_Logs_\(timestamp).txt")
                                 
                                 do {
-                                    try logs.write(to: tempFileURL, atomically: true, encoding: .utf8)
+                                    // Write the logs to the file
+                                    try logsContent.write(to: fileURL, atomically: true, encoding: .utf8)
                                     
-                                    // Share the file instead of just the text
-                                    let activityVC = UIActivityViewController(activityItems: [tempFileURL], applicationActivities: nil)
-                                    
-                                    // Present the view controller
-                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                       let rootVC = windowScene.windows.first?.rootViewController {
-                                        
-                                        // For iPad, we need to specify the source view and source rect
-                                        if let popoverController = activityVC.popoverPresentationController {
-                                            popoverController.sourceView = rootVC.view
-                                            popoverController.sourceRect = CGRect(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2, width: 0, height: 0)
-                                            popoverController.permittedArrowDirections = []
-                                        }
-                                        
-                                        rootVC.present(activityVC, animated: true)
-                                    }
+                                    // Set alert variables and show the alert
+                                    alertTitle = "Logs Exported"
+                                    alertMessage = "Logs have been saved to Files app in StikJIT folder."
+                                    isError = false
+                                    showingExportAlert = true
                                 } catch {
-                                    print("Error writing logs to file: \(error)")
+                                    // Set error alert variables and show the alert
+                                    alertTitle = "Export Failed"
+                                    alertMessage = "Failed to save logs: \(error.localizedDescription)"
+                                    isError = true
+                                    showingExportAlert = true
                                 }
                             }) {
                                 HStack {
-                                    Text("Share Logs")
+                                    Text("Export Logs")
                                         .foregroundColor(.blue)
                                     Spacer()
-                                    Image(systemName: "square.and.arrow.up")
+                                    Image(systemName: "square.and.arrow.down")
                                         .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 14)
@@ -127,18 +142,37 @@ struct ConsoleLogsView: View {
                             .background(Color(red: 0.1, green: 0.1, blue: 0.1))
                             
                             Divider()
-                                .background(Color.gray.opacity(0.3))
+                                .background(Color(red: 0.15, green: 0.15, blue: 0.15))
                             
                             // Copy button
                             Button(action: {
-                                let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
-                                UIPasteboard.general.string = logs
+                                // Create logs content with device information
+                                var logsContent = "=== DEVICE INFORMATION ===\n"
+                                logsContent += "Version: \(UIDevice.current.systemVersion)\n"
+                                logsContent += "Name: \(UIDevice.current.name)\n" 
+                                logsContent += "Model: \(UIDevice.current.model)\n"
+                                logsContent += "StikJIT Version: App Version: 1.0\n\n"
+                                logsContent += "=== LOG ENTRIES ===\n"
+                                
+                                // Add all log entries with proper formatting
+                                logsContent += logManager.logs.map { 
+                                    "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" 
+                                }.joined(separator: "\n")
+                                
+                                // Copy to clipboard
+                                UIPasteboard.general.string = logsContent
+                                
+                                // Show success alert using SwiftUI alert
+                                alertTitle = "Logs Copied"
+                                alertMessage = "Logs have been copied to clipboard."
+                                isError = false
+                                showingCopyAlert = true
                             }) {
                                 HStack {
                                     Text("Copy Logs")
                                         .foregroundColor(.blue)
                                     Spacer()
-                                    Image(systemName: "arrow.right")
+                                    Image(systemName: "doc.on.doc")
                                         .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 14)
@@ -186,9 +220,20 @@ struct ConsoleLogsView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .alert(alertTitle, isPresented: $showingExportAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
+        .alert(alertTitle, isPresented: $showingCopyAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
     }
     
-
+    // Creates an NSAttributedString that combines timestamp, type, and message
+    // with proper styling for each component
     private func createLogAttributedString(_ logEntry: LogManager.LogEntry) -> NSAttributedString {
         let fullString = NSMutableAttributedString()
         
