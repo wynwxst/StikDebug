@@ -106,7 +106,6 @@ struct HeartbeatApp: App {
                             }
                         }
                         
-                        mount.pubMount()
                     }
             }
         }
@@ -172,7 +171,7 @@ class MountingProgress: ObservableObject {
         let fileManager = FileManager.default
         let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
         
-        if pubHeartBeat, fileManager.fileExists(atPath: pairingpath), !isMounted() {
+        if fileManager.fileExists(atPath: pairingpath), !isMounted() {
             if let mountingThread {
                 mountingThread.cancel()
                 self.mountingThread = nil
@@ -209,6 +208,10 @@ func startHeartbeatInBackground() {
                 print("Heartbeat started successfully: \(message ?? "")")
                 
                 pubHeartBeat = true
+                
+                if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path) {
+                    MountingProgress.shared.pubMount()
+                }
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 
