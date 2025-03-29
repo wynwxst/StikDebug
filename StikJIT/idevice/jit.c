@@ -60,7 +60,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (err != IdeviceSuccess) {
         logger("Failed to connect to RSD port: %d", err);
         adapter_free(adapter);
-        core_device_proxy_free(core_device);
         return 1;
     }
     logger("Successfully connected to RSD port");
@@ -75,7 +74,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (err != IdeviceSuccess) {
         logger("Failed to create XPC device: %d", err);
         adapter_free(adapter);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -84,6 +82,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     err = xpc_device_get_service(xpc_device, "com.apple.internal.dt.remote.debugproxy", &debug_service);
     if (err != IdeviceSuccess) {
         logger("Failed to get debug proxy service: %d", err);
+        xpc_device_free(xpc_device);
         return 1;
     }
     
@@ -93,7 +92,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (err != IdeviceSuccess) {
         logger("Failed to get process control service: %d", err);
         xpc_device_free(xpc_device);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -108,7 +106,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (err != IdeviceSuccess) {
         logger("Failed to extract adapter: %d", err);
         xpc_device_free(xpc_device);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -118,7 +115,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         logger("Failed to connect to process control port: %d", err);
         adapter_free(pc_adapter);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
+        xpc_service_free(debug_service);
         return 1;
     }
     logger("Successfully connected to process control port");
@@ -130,7 +127,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         logger("Failed to create remote server: %d", err);
         adapter_free(pc_adapter);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
+        xpc_service_free(debug_service);
         return 1;
     }
     
@@ -141,7 +138,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         logger("Failed to create process control client: %d", err);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
+        xpc_service_free(debug_service);
         return 1;
     }
     
@@ -154,7 +151,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         process_control_free(process_control);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
+        xpc_service_free(debug_service);
         return 1;
     }
     logger("Successfully launched app with PID: %" PRIu64 "", pid);
@@ -173,7 +170,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         process_control_free(process_control);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -186,7 +182,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         process_control_free(process_control);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
         return 1;
     }
     logger("Successfully connected to debug proxy port");
@@ -201,7 +196,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         process_control_free(process_control);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -213,12 +207,10 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (attach_cmd == NULL) {
         logger("Failed to create attach command");
         debug_proxy_free(debug_proxy);
-        adapter_free(debug_adapter);
         xpc_service_free(debug_service);
         process_control_free(process_control);
         remote_server_free(remote_server);
         xpc_service_free(pc_service);
-        core_device_proxy_free(core_device);
         return 1;
     }
     
@@ -257,6 +249,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
      *****************************************************************/
     debug_proxy_free(debug_proxy);
     xpc_service_free(debug_service);
+    xpc_service_free(pc_service);
     
     logger("Debug session completed");
     return 0;
