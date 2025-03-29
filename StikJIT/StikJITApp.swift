@@ -162,6 +162,15 @@ class MountingProgress: ObservableObject {
         }
     }
     
+    func progressCallback(progress: size_t, total: size_t, context: UnsafeMutableRawPointer?) {
+        let percentage = Double(progress) / Double(total) * 100.0
+        print("Mounting progress: \(percentage)%")
+        
+        DispatchQueue.main.async {
+            self.mountProgress = percentage
+        }
+    }
+    
     func pubMount() { mount() }
     
     private func mount() {

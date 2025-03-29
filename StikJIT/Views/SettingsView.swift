@@ -180,7 +180,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            if self.mounted {
+                            if self.mounted || (mountProg.mountProgress == 100) {
                                 HStack {
                                     Spacer()
                                     Text("✓ Developer Disk Image Mounted Sucessfully!")
@@ -199,7 +199,7 @@ struct SettingsView: View {
                                         .font(.system(.caption, design: .rounded))
                                         .foregroundColor(.secondary)
                                     Spacer()
-                                    Text("\(Int(MountingProgress.shared.mountProgress))%")
+                                    Text("\(Int(mountProg.mountProgress))%")
                                         .font(.system(.caption, design: .rounded))
                                         .foregroundColor(.secondary)
                                 }
@@ -212,8 +212,8 @@ struct SettingsView: View {
                                         
                                         RoundedRectangle(cornerRadius: 6)
                                             .fill(Color.green)
-                                            .frame(width: geometry.size.width * CGFloat(MountingProgress.shared.mountProgress), height: 10)
-                                            .animation(.linear(duration: 0.3), value: MountingProgress.shared.mountProgress)
+                                            .frame(width: geometry.size.width * CGFloat(mountProg.mountProgress), height: 10)
+                                            .animation(.linear(duration: 0.3), value: mountProg.mountProgress)
                                     }
                                 }
                                 .frame(height: 10)

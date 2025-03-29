@@ -15,10 +15,7 @@ typealias ImageMounterHandle = OpaquePointer
 typealias LockdowndClientHandle = OpaquePointer
 
 func progressCallback(progress: size_t, total: size_t, context: UnsafeMutableRawPointer?) {
-    let percentage = Double(progress) / Double(total) * 100.0
-    print("Mounting progress: \(percentage)%")
-    
-    MountingProgress.shared.mountProgress = percentage
+    MountingProgress.shared.progressCallback(progress: progress, total: total, context: context)
 }
 
 func readFile(path: String) -> Data? {
@@ -50,6 +47,7 @@ func htons(_ value: UInt16) -> UInt16 {
 }
 
 func isMounted() -> Bool {
+    return false // MARK: REMEMBER THIS
     var addr = sockaddr_in()
     memset(&addr, 0, MemoryLayout<sockaddr_in>.size)
     addr.sin_family = sa_family_t(AF_INET)
