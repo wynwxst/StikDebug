@@ -43,6 +43,14 @@ struct HeartbeatApp: App {
             if isLoading {
                 LoadingView()
                     .onAppear {
+                        if !isConnectedToWifi() {
+                            showAlert(title: "Connection Required",
+                                    message: "Please connect to WiFi to continue",
+                                    showOk: true) { _ in
+                                exit(0)
+                            }
+                            return
+                        }
                         startProxy() { result, error in
                             if result {
                                 checkVPNConnection() { result, vpn_error in
@@ -202,6 +210,27 @@ struct HeartbeatApp: App {
         if let workItem = timeoutWorkItem {
             DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: workItem)
         }
+    }
+    
+    func isConnectedToWifi() -> Bool {
+        var isWifi = false
+            let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
+            let semaphore = DispatchSemaphore(value: 0)
+            
+            monitor.pathUpdateHandler = { path in
+                isWifi = path.status == .satisfied
+                semaphore.signal()
+            }
+            
+            let queue = DispatchQueue(label: "WiFiCheckQueue")
+            monitor.start(queue: queue)
+            
+            // Wait for the result with a timeout to avoid hanging
+            let result = semaphore.wait(timeout: .now() + 2)
+            monitor.cancel()
+            
+            // Return false if we timed out
+            return result == .success && isWifi
     }
 }
 
