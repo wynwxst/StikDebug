@@ -203,7 +203,6 @@ class MountingProgress: ObservableObject {
 func startHeartbeatInBackground() {
     let heartBeat = Thread {
         let completionHandler: @convention(block) (Int32, String?) -> Void = { result, message in
-
             if result == 0 {
                 print("Heartbeat started successfully: \(message ?? "")")
                 

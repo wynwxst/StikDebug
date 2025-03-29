@@ -21,6 +21,8 @@ struct SettingsView: View {
     
     @StateObject private var mountProg = MountingProgress.shared
     
+    @State private var mounted = false
+    
     // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
         "Blu": "https://github.com/0-Blu.png",
@@ -178,7 +180,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            if mountProg.coolisMounted {
+                            if self.mounted {
                                 HStack {
                                     Spacer()
                                     Text("✓ Developer Disk Image Mounted Sucessfully!")
@@ -221,7 +223,7 @@ struct SettingsView: View {
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                         .onAppear() {
-                            mountProg.checkforMounted()
+                            self.mounted = isMounted()
                         }
                     }
                     
