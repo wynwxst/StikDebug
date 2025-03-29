@@ -156,6 +156,12 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     }
     logger("Successfully launched app with PID: %" PRIu64 "", pid);
     
+    // Disable memory limit for PID
+    err = process_control_disable_memory_limit(process_control, pid);
+    if (err != IdeviceSuccess) {
+        logger("failed to disable memory limit: %d", err);
+    }
+    
     /*****************************************************************
      * Debug Proxy - Attach to Process
      *****************************************************************/
