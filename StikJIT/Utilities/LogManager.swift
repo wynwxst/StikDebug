@@ -34,7 +34,7 @@ class LogManager: ObservableObject {
     }
     
     func addLog(message: String, type: LogEntry.LogType) {
-        // Remove redundant prefixes from the message
+        //clean dumb stuff
         var cleanMessage = message
         
         // Clean up common prefixes that match the log type
