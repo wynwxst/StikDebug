@@ -249,6 +249,7 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
      *****************************************************************/
     debug_proxy_free(debug_proxy);
     xpc_service_free(debug_service);
+    xpc_service_free(pc_service);
     
     logger("Debug session completed");
     return 0;
