@@ -183,7 +183,7 @@ struct SettingsView: View {
                             if self.mounted || (mountProg.mountProgress == 100) {
                                 HStack {
                                     Spacer()
-                                    Text("✓ Developer Disk Image Mounted Sucessfully!")
+                                    Text("✓ Developer Disk Image Mounted Successfully!")
                                         .font(.system(.callout, design: .rounded))
                                         .foregroundColor(.green)
                                         .padding(.vertical, 10)
