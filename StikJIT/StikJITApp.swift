@@ -162,7 +162,6 @@ class MountingProgress: ObservableObject {
         }
     }
     
-    
     func pubMount() { mount() }
     
     private func mount() {
@@ -171,7 +170,7 @@ class MountingProgress: ObservableObject {
         let fileManager = FileManager.default
         let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
         
-        if fileManager.fileExists(atPath: pairingpath), !isMounted() {
+        if isPairing(), !isMounted() {
             if let mountingThread {
                 mountingThread.cancel()
                 self.mountingThread = nil
@@ -198,6 +197,17 @@ class MountingProgress: ObservableObject {
             mountingThread!.start()
         }
     }
+}
+
+func isPairing() -> Bool {
+    let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
+    var pairingFile: IdevicePairingFile?
+    let err = idevice_pairing_file_read(pairingpath, &pairingFile)
+    if err != IdeviceSuccess {
+        print("Failed to read pairing file: \(err)")
+        return false
+    }
+    return true
 }
 
 func startHeartbeatInBackground() {
