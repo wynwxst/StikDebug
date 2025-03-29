@@ -77,7 +77,7 @@ struct ConsoleLogsView: View {
                     VStack(spacing: 16) {
                         // Error count with red theme
                         HStack {
-                            Text("\(logManager.errorCount) Errors")
+                            Text("\(logManager.errorCount) Critical Errors.")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .padding(.vertical, 12)
