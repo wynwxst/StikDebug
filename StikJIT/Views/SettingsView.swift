@@ -6,9 +6,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// Add this if ConsoleLogsView is in a different module (unlikely but just in case)
-// import ConsoleLogsModule 
-
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
