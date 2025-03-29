@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
     
+    @StateObject private var mountProg = MountingProgress.shared
+    
     // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
         "Blu": "https://github.com/0-Blu.png",
@@ -168,6 +170,61 @@ struct SettingsView: View {
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
+                    
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Developer Disk Image")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            if mountProg.coolisMounted {
+                                HStack {
+                                    Spacer()
+                                    Text("✓ Developer Disk Image Mounted Sucessfully!")
+                                        .font(.system(.callout, design: .rounded))
+                                        .foregroundColor(.green)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 18)
+                                        .background(Color.green.opacity(0.1))
+                                        .cornerRadius(10)
+                                    Spacer()
+                                }
+                                .padding(.top, 6)
+                            } else {
+                                HStack {
+                                    Text("Mounting Developer Disk Image...")
+                                        .font(.system(.caption, design: .rounded))
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text("\(Int(MountingProgress.shared.mountProgress))%")
+                                        .font(.system(.caption, design: .rounded))
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                GeometryReader { geometry in
+                                    ZStack(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color(UIColor.tertiarySystemFill))
+                                            .frame(height: 10)
+                                        
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color.green)
+                                            .frame(width: geometry.size.width * CGFloat(MountingProgress.shared.mountProgress), height: 10)
+                                            .animation(.linear(duration: 0.3), value: MountingProgress.shared.mountProgress)
+                                    }
+                                }
+                                .frame(height: 10)
+                            }
+                            
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                        .onAppear() {
+                            mountProg.checkforMounted()
+                        }
+                    }
+                    
                     
                     // About section
                     SettingsCard {

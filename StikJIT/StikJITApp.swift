@@ -15,6 +15,21 @@ struct HeartbeatApp: App {
     @State private var isPairing = false
     @State private var heartBeat = false
     @State private var error: Int32? = nil
+    @StateObject private var mount = MountingProgress.shared
+    
+    let urls: [String] = [
+        "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/BuildManifest.plist",
+        "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/Image.dmg",
+        "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/Image.dmg.trustcache"
+    ]
+
+    let outputDir: String = "DDI"
+
+    let outputFiles: [String] = [
+        "DDI/BuildManifest.plist",
+        "DDI/Image.dmg",
+        "DDI/Image.dmg.trustcache"
+    ]
     
     init() {
         let fixMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.fix_init(forOpeningContentTypes:asCopy:)))!
@@ -30,7 +45,7 @@ struct HeartbeatApp: App {
                         startProxy()
                         if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
                             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                                if heartBeat {
+                                if pubHeartBeat {
                                     isLoading = false
                                     timer.invalidate()
                                 } else {
@@ -82,6 +97,17 @@ struct HeartbeatApp: App {
                     }
             } else {
                 MainTabView()
+                    .onAppear() {
+                        let fileManager = FileManager.default
+                        for (index, urlString) in urls.enumerated() {
+                            let destinationURL = URL.documentsDirectory.appendingPathComponent(outputFiles[index])
+                            if !fileManager.fileExists(atPath: destinationURL.path) {
+                                downloadFile(from: urlString, to: destinationURL)
+                            }
+                        }
+                        
+                        mount.pubMount()
+                    }
             }
         }
     }
@@ -103,34 +129,77 @@ struct HeartbeatApp: App {
             }
         }
     }
-    
-    func startHeartbeatInBackground() {
-        let heartBeat = Thread {
-            let completionHandler: @convention(block) (Int32, String?) -> Void = { result, message in
+}
 
-                if result == 0 {
-                    print("Heartbeat started successfully: \(message ?? "")")
-                    
-                    self.heartBeat = true
+var pubHeartBeat = false
+
+actor FunctionGuard<T> {
+    private var runningTask: Task<T, Never>?
+
+    func execute(_ work: @escaping @Sendable () -> T) async -> T {
+        if let task = runningTask {
+            return await task.value // If already running, wait for the existing result
+        }
+
+        let task = Task.detached { work() } // Run in the background
+        runningTask = task
+        let result = await task.value
+        runningTask = nil
+        return result
+    }
+}
+
+
+
+class MountingProgress: ObservableObject {
+    static var shared = MountingProgress()
+    @Published var mountProgress: Double = 0.0
+    @Published var mountingThread: Thread?
+    @Published var coolisMounted: Bool = false
+    
+    func checkforMounted() {
+        DispatchQueue.main.async {
+            self.coolisMounted = isMounted()
+        }
+    }
+    
+    
+    func pubMount() { mount() }
+    
+    private func mount() {
+        self.coolisMounted = isMounted()
+        
+        let fileManager = FileManager.default
+        let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
+        
+        if pubHeartBeat, fileManager.fileExists(atPath: pairingpath), !isMounted() {
+            if let mountingThread {
+                mountingThread.cancel()
+                self.mountingThread = nil
+            }
+            
+            mountingThread = Thread {
+                let mount = mountPersonalDDI(imagePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg").path, trustcachePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path, manifestPath: URL.documentsDirectory.appendingPathComponent("DDI/BuildManifest.plist").path, pairingFilePath: pairingpath)
+                
+                if !mount {
+                    showAlert(title: "Error", message: "An Error Occured when Mounting the DDI", showOk: true, showTryAgain: true) { cool in
+                        if cool {
+                            self.mount()
+                        }
+                    }
                 } else {
-                    print("Error: \(result == InvalidHostID.rawValue ? "Invalid host ID, Please Selecr New Pairing File" : message ?? "") (Code: \(result))")
-                    
-                    showAlert(title: "HeartBeat Error", message: "\(message ?? "") (\(result))", showOk: true) { _ in
-                        self.error = result
+                    DispatchQueue.main.async {
+                        self.coolisMounted = isMounted()
                     }
                 }
             }
             
-            JITEnableContext.shared().startHeartbeat(completionHandler: completionHandler, logger: nil)
+            mountingThread!.qualityOfService = .background
+            mountingThread!.name = "mounting"
+            mountingThread!.start()
         }
-        
-        heartBeat.qualityOfService = .background
-        heartBeat.name = "HeartBeat"
-        heartBeat.start()
     }
-
 }
-
 
 func startHeartbeatInBackground() {
     let heartBeat = Thread {
@@ -138,6 +207,8 @@ func startHeartbeatInBackground() {
 
             if result == 0 {
                 print("Heartbeat started successfully: \(message ?? "")")
+                
+                pubHeartBeat = true
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 
@@ -199,22 +270,65 @@ struct LoadingView: View {
     }
 }
 
-public func showAlert(title: String, message: String, showOk: Bool, completion: @escaping (Bool) -> Void) {
+public func showAlert(title: String, message: String, showOk: Bool, showTryAgain: Bool = false, completion: @escaping (Bool) -> Void) {
     DispatchQueue.main.async {
         if let mainWindow = UIApplication.shared.windows.last {
             let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
             
-             if showOk {
+            if showOk, !showTryAgain {
                 let okAction = UIAlertAction(title: "OK", style: .default) { _ in
                     completion(true)
                 }
 
                 alert.addAction(okAction)
-            } else {
+            } else if !showTryAgain {
                 completion(false)
+            }
+            
+            if showTryAgain {
+                let tryAgainAction = UIAlertAction(title: "Try Again", style: .default) { _ in
+                    completion(true)
+                }
+
+                alert.addAction(tryAgainAction)
+                
+                let okAction = UIAlertAction(title: "OK", style: .cancel) { _ in
+                    completion(false)
+                }
+
+                alert.addAction(okAction)
             }
             
             mainWindow.rootViewController?.present(alert, animated: true, completion: nil)
         }
     }
+}
+
+func downloadFile(from urlString: String, to destinationURL: URL) {
+    let fileManager = FileManager.default
+    let documentsDirectory = URL.documentsDirectory
+
+    
+    guard let url = URL(string: urlString) else {
+        print("Invalid URL: \(urlString)")
+        return
+    }
+
+    let task = URLSession.shared.downloadTask(with: url) { (tempLocalUrl, response, error) in
+        guard let tempLocalUrl = tempLocalUrl, error == nil else {
+            print("Error downloading file from \(urlString): \(String(describing: error))")
+            return
+        }
+        
+        do {
+            // Move the downloaded file to the destination
+            try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+            try fileManager.moveItem(at: tempLocalUrl, to: destinationURL)
+            print("Downloaded \(urlString) to \(destinationURL.path)")
+        } catch {
+            print("Error saving file: \(error)")
+        }
+    }
+    
+    task.resume()
 }

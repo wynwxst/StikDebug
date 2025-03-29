@@ -1,6 +1,10 @@
 // Jackson Coxson
 // Bindings to idevice - https://github.com/jkcoxson/idevice
 
+
+#ifndef IDEVICE_H
+#define IDEVICE_H
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,10 +12,8 @@
 #include <sys/socket.h>
 #include "plist.h"
 
-#ifndef IDEVICE_H
-#define IDEVICE_H
-
 #define LOCKDOWN_PORT 62078
+
 
 typedef enum IdeviceErrorCode {
   IdeviceSuccess = 0,
@@ -101,6 +103,8 @@ typedef struct IdeviceSocketHandle IdeviceSocketHandle;
 typedef struct ImageMounterHandle ImageMounterHandle;
 
 typedef struct InstallationProxyClientHandle InstallationProxyClientHandle;
+
+typedef struct LockdowndClientHandle LockdowndClientHandle;
 
 /**
  * Opaque handle to a ProcessControlClient
@@ -916,6 +920,145 @@ enum IdeviceErrorCode installation_proxy_get_apps(struct InstallationProxyClient
 void installation_proxy_client_free(struct InstallationProxyClientHandle *handle);
 
 /**
+ * Connects to lockdownd service using TCP provider
+ *
+ * # Arguments
+ * * [`provider`] - A TcpProvider
+ * * [`client`] - On success, will be set to point to a newly allocated LockdowndClient handle
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `provider` must be a valid pointer to a handle allocated by this library
+ * `client` must be a valid, non-null pointer to a location where the handle will be stored
+ */
+enum IdeviceErrorCode lockdownd_connect_tcp(struct TcpProviderHandle *provider,
+                                            struct LockdowndClientHandle **client);
+
+/**
+ * Connects to lockdownd service using Usbmuxd provider
+ *
+ * # Arguments
+ * * [`provider`] - A UsbmuxdProvider
+ * * [`client`] - On success, will be set to point to a newly allocated LockdowndClient handle
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `provider` must be a valid pointer to a handle allocated by this library
+ * `client` must be a valid, non-null pointer to a location where the handle will be stored
+ */
+enum IdeviceErrorCode lockdownd_connect_usbmuxd(struct UsbmuxdProviderHandle *provider,
+                                                struct LockdowndClientHandle **client);
+
+/**
+ * Creates a new LockdowndClient from an existing Idevice connection
+ *
+ * # Arguments
+ * * [`socket`] - An IdeviceSocket handle
+ * * [`client`] - On success, will be set to point to a newly allocated LockdowndClient handle
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `socket` must be a valid pointer to a handle allocated by this library
+ * `client` must be a valid, non-null pointer to a location where the handle will be stored
+ */
+enum IdeviceErrorCode lockdownd_new(struct IdeviceHandle *socket,
+                                    struct LockdowndClientHandle **client);
+
+/**
+ * Starts a session with lockdownd
+ *
+ * # Arguments
+ * * `client` - A valid LockdowndClient handle
+ * * `pairing_file` - An IdevicePairingFile alocated by this library
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ * `pairing_file` must be a valid plist_t containing a pairing file
+ */
+enum IdeviceErrorCode lockdownd_start_session(struct LockdowndClientHandle *client,
+                                              struct IdevicePairingFile *pairing_file);
+
+/**
+ * Starts a service through lockdownd
+ *
+ * # Arguments
+ * * `client` - A valid LockdowndClient handle
+ * * `identifier` - The service identifier to start (null-terminated string)
+ * * `port` - Pointer to store the returned port number
+ * * `ssl` - Pointer to store whether SSL should be enabled
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ * `identifier` must be a valid null-terminated string
+ * `port` and `ssl` must be valid pointers
+ */
+enum IdeviceErrorCode lockdownd_start_service(struct LockdowndClientHandle *client,
+                                              const char *identifier,
+                                              uint16_t *port,
+                                              bool *ssl);
+
+/**
+ * Gets a value from lockdownd
+ *
+ * # Arguments
+ * * `client` - A valid LockdowndClient handle
+ * * `value` - The value to get (null-terminated string)
+ * * `out_plist` - Pointer to store the returned plist value
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ * `value` must be a valid null-terminated string
+ * `out_plist` must be a valid pointer to store the plist
+ */
+enum IdeviceErrorCode lockdownd_get_value(struct LockdowndClientHandle *client,
+                                          const char *value,
+                                          void **out_plist);
+
+/**
+ * Gets all values from lockdownd
+ *
+ * # Arguments
+ * * `client` - A valid LockdowndClient handle
+ * * `out_plist` - Pointer to store the returned plist dictionary
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ * `out_plist` must be a valid pointer to store the plist
+ */
+enum IdeviceErrorCode lockdownd_get_all_values(struct LockdowndClientHandle *client,
+                                               void **out_plist);
+
+/**
+ * Frees a LockdowndClient handle
+ *
+ * # Arguments
+ * * [`handle`] - The handle to free
+ *
+ * # Safety
+ * `handle` must be a valid pointer to the handle that was allocated by this library,
+ * or NULL (in which case this function does nothing)
+ */
+void lockdownd_client_free(struct LockdowndClientHandle *handle);
+
+/**
  * Initializes the logger
  *
  * # Arguments
@@ -1152,6 +1295,239 @@ enum IdeviceErrorCode image_mounter_mount_developer(struct ImageMounterHandle *c
                                                     size_t image_len,
                                                     const uint8_t *signature,
                                                     size_t signature_len);
+
+/**
+ * Queries the personalization manifest from the device
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`image_type`] - The type of image to query
+ * * [`signature`] - Pointer to the signature data
+ * * [`signature_len`] - Length of the signature data
+ * * [`manifest`] - Will be set to point to the manifest data on success
+ * * [`manifest_len`] - Will be set to the length of the manifest data
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * All pointers must be valid and non-null
+ * `image_type` must be a valid null-terminated C string
+ */
+enum IdeviceErrorCode image_mounter_query_personalization_manifest(struct ImageMounterHandle *client,
+                                                                   const char *image_type,
+                                                                   const uint8_t *signature,
+                                                                   size_t signature_len,
+                                                                   uint8_t **manifest,
+                                                                   size_t *manifest_len);
+
+/**
+ * Queries the nonce from the device
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`personalized_image_type`] - The type of image to query (optional)
+ * * [`nonce`] - Will be set to point to the nonce data on success
+ * * [`nonce_len`] - Will be set to the length of the nonce data
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client`, `nonce`, and `nonce_len` must be valid pointers
+ * `personalized_image_type` can be NULL
+ */
+enum IdeviceErrorCode image_mounter_query_nonce(struct ImageMounterHandle *client,
+                                                const char *personalized_image_type,
+                                                uint8_t **nonce,
+                                                size_t *nonce_len);
+
+/**
+ * Queries personalization identifiers from the device
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`image_type`] - The type of image to query (optional)
+ * * [`identifiers`] - Will be set to point to the identifiers plist on success
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` and `identifiers` must be valid pointers
+ * `image_type` can be NULL
+ */
+enum IdeviceErrorCode image_mounter_query_personalization_identifiers(struct ImageMounterHandle *client,
+                                                                      const char *image_type,
+                                                                      void **identifiers);
+
+/**
+ * Rolls the personalization nonce
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ */
+enum IdeviceErrorCode image_mounter_roll_personalization_nonce(struct ImageMounterHandle *client);
+
+/**
+ * Rolls the cryptex nonce
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * `client` must be a valid pointer to a handle allocated by this library
+ */
+enum IdeviceErrorCode image_mounter_roll_cryptex_nonce(struct ImageMounterHandle *client);
+
+/**
+ * Mounts a personalized developer image
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`provider`] - A valid provider handle
+ * * [`image`] - Pointer to the image data
+ * * [`image_len`] - Length of the image data
+ * * [`trust_cache`] - Pointer to the trust cache data
+ * * [`trust_cache_len`] - Length of the trust cache data
+ * * [`build_manifest`] - Pointer to the build manifest data
+ * * [`build_manifest_len`] - Length of the build manifest data
+ * * [`info_plist`] - Pointer to info plist (optional)
+ * * [`unique_chip_id`] - The device's unique chip ID
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * All pointers must be valid (except optional ones which can be null)
+ */
+enum IdeviceErrorCode image_mounter_mount_personalized_usbmuxd(struct ImageMounterHandle *client,
+                                                               struct UsbmuxdProviderHandle *provider,
+                                                               const uint8_t *image,
+                                                               size_t image_len,
+                                                               const uint8_t *trust_cache,
+                                                               size_t trust_cache_len,
+                                                               const uint8_t *build_manifest,
+                                                               size_t build_manifest_len,
+                                                               const void *info_plist,
+                                                               uint64_t unique_chip_id);
+
+/**
+ * Mounts a personalized developer image
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`provider`] - A valid provider handle
+ * * [`image`] - Pointer to the image data
+ * * [`image_len`] - Length of the image data
+ * * [`trust_cache`] - Pointer to the trust cache data
+ * * [`trust_cache_len`] - Length of the trust cache data
+ * * [`build_manifest`] - Pointer to the build manifest data
+ * * [`build_manifest_len`] - Length of the build manifest data
+ * * [`info_plist`] - Pointer to info plist (optional)
+ * * [`unique_chip_id`] - The device's unique chip ID
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * All pointers must be valid (except optional ones which can be null)
+ */
+enum IdeviceErrorCode image_mounter_mount_personalized_tcp(struct ImageMounterHandle *client,
+                                                           struct TcpProviderHandle *provider,
+                                                           const uint8_t *image,
+                                                           size_t image_len,
+                                                           const uint8_t *trust_cache,
+                                                           size_t trust_cache_len,
+                                                           const uint8_t *build_manifest,
+                                                           size_t build_manifest_len,
+                                                           const void *info_plist,
+                                                           uint64_t unique_chip_id);
+
+/**
+ * Mounts a personalized developer image with progress callback
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`provider`] - A valid provider handle
+ * * [`image`] - Pointer to the image data
+ * * [`image_len`] - Length of the image data
+ * * [`trust_cache`] - Pointer to the trust cache data
+ * * [`trust_cache_len`] - Length of the trust cache data
+ * * [`build_manifest`] - Pointer to the build manifest data
+ * * [`build_manifest_len`] - Length of the build manifest data
+ * * [`info_plist`] - Pointer to info plist (optional)
+ * * [`unique_chip_id`] - The device's unique chip ID
+ * * [`callback`] - Progress callback function
+ * * [`context`] - User context to pass to callback
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * All pointers must be valid (except optional ones which can be null)
+ */
+enum IdeviceErrorCode image_mounter_mount_personalized_usbmuxd_with_callback(struct ImageMounterHandle *client,
+                                                                             struct UsbmuxdProviderHandle *provider,
+                                                                             const uint8_t *image,
+                                                                             size_t image_len,
+                                                                             const uint8_t *trust_cache,
+                                                                             size_t trust_cache_len,
+                                                                             const uint8_t *build_manifest,
+                                                                             size_t build_manifest_len,
+                                                                             const void *info_plist,
+                                                                             uint64_t unique_chip_id,
+                                                                             void (*callback)(size_t progress,
+                                                                                              size_t total,
+                                                                                              void *context),
+                                                                             void *context);
+
+/**
+ * Mounts a personalized developer image with progress callback
+ *
+ * # Arguments
+ * * [`client`] - A valid ImageMounter handle
+ * * [`provider`] - A valid provider handle
+ * * [`image`] - Pointer to the image data
+ * * [`image_len`] - Length of the image data
+ * * [`trust_cache`] - Pointer to the trust cache data
+ * * [`trust_cache_len`] - Length of the trust cache data
+ * * [`build_manifest`] - Pointer to the build manifest data
+ * * [`build_manifest_len`] - Length of the build manifest data
+ * * [`info_plist`] - Pointer to info plist (optional)
+ * * [`unique_chip_id`] - The device's unique chip ID
+ * * [`callback`] - Progress callback function
+ * * [`context`] - User context to pass to callback
+ *
+ * # Returns
+ * An error code indicating success or failure
+ *
+ * # Safety
+ * All pointers must be valid (except optional ones which can be null)
+ */
+enum IdeviceErrorCode image_mounter_mount_personalized_tcp_with_callback(struct ImageMounterHandle *client,
+                                                                         struct TcpProviderHandle *provider,
+                                                                         const uint8_t *image,
+                                                                         size_t image_len,
+                                                                         const uint8_t *trust_cache,
+                                                                         size_t trust_cache_len,
+                                                                         const uint8_t *build_manifest,
+                                                                         size_t build_manifest_len,
+                                                                         const void *info_plist,
+                                                                         uint64_t unique_chip_id,
+                                                                         void (*callback)(size_t progress,
+                                                                                          size_t total,
+                                                                                          void *context),
+                                                                         void *context);
 
 /**
  * Reads a pairing file from the specified path
@@ -1633,4 +2009,4 @@ enum IdeviceErrorCode idevice_usbmuxd_unix_addr_new(const char *addr,
  */
 void idevice_usbmuxd_addr_free(struct UsbmuxdAddrHandle *usbmuxd_addr);
 
-#endif /* IDEVICE_H */
+#endif
