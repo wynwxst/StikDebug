@@ -10,17 +10,9 @@ import UIKit
 
 struct ConsoleLogsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var dummyLogs: [String] = [
-        "Initializing StikJIT environment...",
-        "Checking device compatibility...",
-        "Loading system configuration...",
-        "Verifying device permissions...",
-        "Initializing JIT compiler...",
-        "Loading pairing credentials...",
-        "Configuration loaded successfully",
-        "System check completed",
-        "Ready for operation"
-    ]
+    @StateObject private var logManager = LogManager.shared
+    @State private var autoScroll = true
+    @State private var scrollView: ScrollViewProxy? = nil
     
     var body: some View {
         NavigationView {
@@ -30,59 +22,70 @@ struct ConsoleLogsView: View {
                 
                 VStack(spacing: 0) {
                     // Terminal-style logs area
-                    ScrollView {
-                        VStack(spacing: 2) {
-                            // Device Information
-                            ForEach(["Version: \(UIDevice.current.systemVersion)",
-                                     "Name: \(UIDevice.current.name)",
-                                     "Model: \(UIDevice.current.model)",
-                                     "StikJIT: 1.0"], id: \.self) { info in
-                                HStack {
-                                    Text("[\(timeString())]")
-                                        .foregroundColor(.blue)
-                                        .font(.system(size: 12, design: .monospaced))
-                                    
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.system(size: 10))
-                                    
-                                    Text(info)
-                                        .font(.system(size: 12, design: .monospaced))
-                                        .foregroundColor(.primary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 2) {
+                                // Device Information
+                                ForEach(["Version: \(UIDevice.current.systemVersion)",
+                                         "Name: \(UIDevice.current.name)",
+                                         "Model: \(UIDevice.current.model)",
+                                         "StikJIT: 1.0"], id: \.self) { info in
+                                    HStack {
+                                        Text("[\(timeString())]")
+                                            .foregroundColor(.blue)
+                                            .font(.system(size: 12, design: .monospaced))
+                                        
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.system(size: 10))
+                                        
+                                        Text(info)
+                                            .font(.system(size: 12, design: .monospaced))
+                                            .foregroundColor(.primary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .padding(.vertical, 1)
+                                    .padding(.horizontal, 8)
                                 }
-                                .padding(.vertical, 1)
-                                .padding(.horizontal, 8)
+                                
+                                Divider()
+                                    .padding(.vertical, 4)
+                                
+                                // Real log entries
+                                ForEach(logManager.logs) { logEntry in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Text("[\(formatTime(date: logEntry.timestamp))]")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 11, design: .monospaced))
+                                        
+                                        Text("[\(logEntry.type.rawValue)]")
+                                            .foregroundColor(colorForLogType(logEntry.type))
+                                            .font(.system(size: 11, design: .monospaced))
+                                        
+                                        Text(logEntry.message)
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundColor(.primary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .padding(.vertical, 1)
+                                    .padding(.horizontal, 8)
+                                    .id(logEntry.id)
+                                }
                             }
-                            
-                            Divider()
-                                .padding(.vertical, 4)
-                            
-                            // Log entries
-                            ForEach(dummyLogs.indices, id: \.self) { index in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Text("[\(timeString(minutesAgo: dummyLogs.count - index))]")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 11, design: .monospaced))
-                                    
-                                    Text("[INFO]")
-                                        .foregroundColor(.green)
-                                        .font(.system(size: 11, design: .monospaced))
-                                    
-                                    Text(dummyLogs[index])
-                                        .font(.system(size: 11, design: .monospaced))
-                                        .foregroundColor(.primary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                .padding(.vertical, 1)
-                                .padding(.horizontal, 8)
+                            .padding(.vertical, 8)
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(8)
+                            .padding(.horizontal, 8)
+                            .padding(.top, 8)
+                        }
+                        .onAppear {
+                            scrollView = proxy
+                        }
+                        .onChange(of: logManager.logs.count) {
+                            if autoScroll, let lastLog = logManager.logs.last {
+                                proxy.scrollTo(lastLog.id, anchor: .bottom)
                             }
                         }
-                        .padding(.vertical, 8)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .cornerRadius(8)
-                        .padding(.horizontal, 8)
-                        .padding(.top, 8)
                     }
                     
                     Spacer()
@@ -91,13 +94,13 @@ struct ConsoleLogsView: View {
                     VStack(spacing: 16) {
                         // Error count
                         HStack {
-                            Text("0 Critical Errors.")
+                            Text("\(logManager.errorCount) Critical Errors.")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 20)
                                 .frame(maxWidth: .infinity)
-                                .background(Color.red)
+                                .background(logManager.errorCount > 0 ? Color.red : Color.green)
                                 .cornerRadius(8)
                         }
                         .padding(.horizontal)
@@ -106,7 +109,7 @@ struct ConsoleLogsView: View {
                         VStack(spacing: 1) {
                             // Share button
                             Button(action: {
-                                let logs = dummyLogs.map { "[\(timeString())] [INFO] \($0)" }.joined(separator: "\n")
+                                let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
                                 let activityVC = UIActivityViewController(activityItems: [logs], applicationActivities: nil)
                                 
                                 guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -132,7 +135,7 @@ struct ConsoleLogsView: View {
                             
                             // Copy button
                             Button(action: {
-                                let logs = dummyLogs.map { "[\(timeString())] [INFO] \($0)" }.joined(separator: "\n")
+                                let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
                                 UIPasteboard.general.string = logs
                             }) {
                                 HStack {
@@ -167,6 +170,12 @@ struct ConsoleLogsView: View {
                             .fontWeight(.regular)
                     }
                     .foregroundColor(.blue)
+                },
+                trailing: Button(action: {
+                    logManager.clearLogs()
+                }) {
+                    Text("Clear")
+                        .foregroundColor(.blue)
                 }
             )
         }
@@ -179,12 +188,33 @@ struct ConsoleLogsView: View {
         return formatter.string(from: Date())
     }
     
+    // Helper to format Date objects to time strings
+    private func formatTime(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter.string(from: date)
+    }
+    
     // Helper to display time with offset for log display
     private func timeString(minutesAgo: Int) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         let date = Calendar.current.date(byAdding: .minute, value: -minutesAgo, to: Date()) ?? Date()
         return formatter.string(from: date)
+    }
+    
+    // Return color based on log type
+    private func colorForLogType(_ type: LogManager.LogEntry.LogType) -> Color {
+        switch type {
+        case .info:
+            return .green
+        case .error:
+            return .red
+        case .debug:
+            return .blue
+        case .warning:
+            return .orange
+        }
     }
 }
 
