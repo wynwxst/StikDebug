@@ -30,47 +30,27 @@ struct ConsoleLogsView: View {
                                          "Name: \(UIDevice.current.name)",
                                          "Model: \(UIDevice.current.model)",
                                          "StikJIT Version: App Version: 1.0"], id: \.self) { info in
-                                    HStack {
-                                        Text("[\(timeString())]")
-                                            .foregroundColor(.blue)
-                                            .font(.system(size: 11, design: .monospaced))
-                                        
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .foregroundColor(.blue)
-                                            .font(.system(size: 10))
-                                        
-                                        Text(info)
-                                            .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.white)
-                                    }
-                                    .padding(.vertical, 2)
-                                    .padding(.horizontal, 10)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Text("[\(timeString())] ℹ️ \(info)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 2)
+                                        .padding(.horizontal, 4)
                                 }
                                 
                                 Spacer()
                                 
-                                // Log entries would appear here
+                                // Log entries with terminal-style alignment (no indentation on wrapped lines)
                                 ForEach(logManager.logs) { logEntry in
-                                    HStack(alignment: .top, spacing: 4) {
-                                        Text("[\(formatTime(date: logEntry.timestamp))]")
-                                            .foregroundColor(.gray)
-                                            .font(.system(size: 11, design: .monospaced))
-                                        
-                                        Text("[\(logEntry.type.rawValue)]")
-                                            .foregroundColor(colorForLogType(logEntry.type))
-                                            .font(.system(size: 11, design: .monospaced))
-                                        
-                                        Text(logEntry.message)
-                                            .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.white)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .lineLimit(nil)
-                                    }
-                                    .padding(.vertical, 1)
-                                    .padding(.horizontal, 10)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .id(logEntry.id)
+                                    Text(AttributedString(createLogAttributedString(logEntry)))
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .textSelection(.enabled)
+                                        .lineLimit(nil)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 1)
+                                        .padding(.horizontal, 4)
+                                        .id(logEntry.id)
                                 }
                             }
                         }
@@ -88,14 +68,14 @@ struct ConsoleLogsView: View {
                     
                     // Bottom section with error count and action buttons
                     VStack(spacing: 16) {
-                        // Error count with blue theme
+                        // Error count with red theme
                         HStack {
                             Text("\(logManager.errorCount) Critical Errors.")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .padding(.vertical, 12)
                                 .frame(maxWidth: .infinity)
-                                .background(Color.blue)
+                                .background(Color.red)
                                 .cornerRadius(10)
                         }
                         .padding(.horizontal)
@@ -173,27 +153,73 @@ struct ConsoleLogsView: View {
                     }
                 }
             }
-            .navigationTitle("Console Logs")
-            .navigationBarItems(
-                leading: Button(action: {
-                    dismiss()
-                }) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Settings")
-                            .fontWeight(.regular)
-                    }
-                    .foregroundColor(.blue)
-                },
-                trailing: Button(action: {
-                    logManager.clearLogs()
-                }) {
-                    Text("Clear")
-                        .foregroundColor(.blue)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Console Logs")
+                        .font(.headline)
+                        .foregroundColor(.white)
                 }
-            )
+                
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack(spacing: 2) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Settings")
+                                .fontWeight(.regular)
+                        }
+                        .foregroundColor(.blue)
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        logManager.clearLogs()
+                    }) {
+                        Text("Clear")
+                            .foregroundColor(.blue)
+                    }
+                }
+            }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+    
+    // Creates an NSAttributedString that combines timestamp, type, and message
+    // with proper styling for each component
+    private func createLogAttributedString(_ logEntry: LogManager.LogEntry) -> NSAttributedString {
+        let fullString = NSMutableAttributedString()
+        
+        // Timestamp part
+        let timestampString = "[\(formatTime(date: logEntry.timestamp))]"
+        let timestampAttr = NSAttributedString(
+            string: timestampString,
+            attributes: [.foregroundColor: UIColor.gray]
+        )
+        fullString.append(timestampAttr)
+        fullString.append(NSAttributedString(string: " "))
+        
+        // Log type part
+        let typeString = "[\(logEntry.type.rawValue)]"
+        let typeColor = UIColor(colorForLogType(logEntry.type))
+        let typeAttr = NSAttributedString(
+            string: typeString,
+            attributes: [.foregroundColor: typeColor]
+        )
+        fullString.append(typeAttr)
+        fullString.append(NSAttributedString(string: " "))
+        
+        // Message part
+        let messageAttr = NSAttributedString(
+            string: logEntry.message,
+            attributes: [.foregroundColor: UIColor.white]
+        )
+        fullString.append(messageAttr)
+        
+        return fullString
     }
     
     // Helper to display current time
