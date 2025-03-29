@@ -17,43 +17,42 @@ struct ConsoleLogsView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(UIColor.systemBackground)
+                Color.black
                     .edgesIgnoringSafeArea(.all)
                 
                 VStack(spacing: 0) {
                     // Terminal-style logs area
                     ScrollViewReader { proxy in
                         ScrollView {
-                            VStack(spacing: 2) {
+                            VStack(spacing: 0) {
                                 // Device Information
                                 ForEach(["Version: \(UIDevice.current.systemVersion)",
                                          "Name: \(UIDevice.current.name)",
                                          "Model: \(UIDevice.current.model)",
-                                         "StikJIT: 1.0"], id: \.self) { info in
+                                         "StikJIT Version: App Version: 1.0"], id: \.self) { info in
                                     HStack {
                                         Text("[\(timeString())]")
                                             .foregroundColor(.blue)
-                                            .font(.system(size: 12, design: .monospaced))
+                                            .font(.system(size: 11, design: .monospaced))
                                         
                                         Image(systemName: "checkmark.seal.fill")
                                             .foregroundColor(.blue)
                                             .font(.system(size: 10))
                                         
                                         Text(info)
-                                            .font(.system(size: 12, design: .monospaced))
-                                            .foregroundColor(.primary)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundColor(.white)
                                     }
-                                    .padding(.vertical, 1)
-                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 
-                                Divider()
-                                    .padding(.vertical, 4)
+                                Spacer()
                                 
-                                // Real log entries
+                                // Log entries would appear here
                                 ForEach(logManager.logs) { logEntry in
-                                    HStack(alignment: .top, spacing: 8) {
+                                    HStack(alignment: .top, spacing: 4) {
                                         Text("[\(formatTime(date: logEntry.timestamp))]")
                                             .foregroundColor(.gray)
                                             .font(.system(size: 11, design: .monospaced))
@@ -64,19 +63,16 @@ struct ConsoleLogsView: View {
                                         
                                         Text(logEntry.message)
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.primary)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .foregroundColor(.white)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .lineLimit(nil)
                                     }
                                     .padding(.vertical, 1)
-                                    .padding(.horizontal, 8)
+                                    .padding(.horizontal, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .id(logEntry.id)
                                 }
                             }
-                            .padding(.vertical, 8)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .cornerRadius(8)
-                            .padding(.horizontal, 8)
-                            .padding(.top, 8)
                         }
                         .onAppear {
                             scrollView = proxy
@@ -92,43 +88,63 @@ struct ConsoleLogsView: View {
                     
                     // Bottom section with error count and action buttons
                     VStack(spacing: 16) {
-                        // Error count
+                        // Error count with blue theme
                         HStack {
                             Text("\(logManager.errorCount) Critical Errors.")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
                                 .frame(maxWidth: .infinity)
-                                .background(logManager.errorCount > 0 ? Color.red : Color.green)
-                                .cornerRadius(8)
+                                .background(Color.blue)
+                                .cornerRadius(10)
                         }
                         .padding(.horizontal)
                         
-                        // Action buttons
+                        // Action buttons with dark background
                         VStack(spacing: 1) {
                             // Share button
                             Button(action: {
                                 let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
-                                let activityVC = UIActivityViewController(activityItems: [logs], applicationActivities: nil)
                                 
-                                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                      let rootVC = windowScene.windows.first?.rootViewController else { return }
-                                rootVC.present(activityVC, animated: true)
+                                // Create a temporary file for the logs
+                                let tempDirectoryURL = FileManager.default.temporaryDirectory
+                                let tempFileURL = tempDirectoryURL.appendingPathComponent("StikJIT_Logs_\(Date().timeIntervalSince1970).txt")
+                                
+                                do {
+                                    try logs.write(to: tempFileURL, atomically: true, encoding: .utf8)
+                                    
+                                    // Share the file instead of just the text
+                                    let activityVC = UIActivityViewController(activityItems: [tempFileURL], applicationActivities: nil)
+                                    
+                                    // Present the view controller
+                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                       let rootVC = windowScene.windows.first?.rootViewController {
+                                        
+                                        // For iPad, we need to specify the source view and source rect
+                                        if let popoverController = activityVC.popoverPresentationController {
+                                            popoverController.sourceView = rootVC.view
+                                            popoverController.sourceRect = CGRect(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2, width: 0, height: 0)
+                                            popoverController.permittedArrowDirections = []
+                                        }
+                                        
+                                        rootVC.present(activityVC, animated: true)
+                                    }
+                                } catch {
+                                    print("Error writing logs to file: \(error)")
+                                }
                             }) {
                                 HStack {
                                     Text("Share Logs")
                                         .foregroundColor(.blue)
-                                        .padding(.leading, 2)
                                     Spacer()
                                     Image(systemName: "square.and.arrow.up")
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 14)
                                 .padding(.horizontal, 20)
                                 .contentShape(Rectangle())
                             }
-                            .background(Color.black.opacity(0.05))
+                            .background(Color(red: 0.1, green: 0.1, blue: 0.1))
                             
                             Divider()
                                 .background(Color.gray.opacity(0.3))
@@ -141,20 +157,19 @@ struct ConsoleLogsView: View {
                                 HStack {
                                     Text("Copy Logs")
                                         .foregroundColor(.blue)
-                                        .padding(.leading, 2)
                                     Spacer()
                                     Image(systemName: "arrow.right")
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 14)
                                 .padding(.horizontal, 20)
                                 .contentShape(Rectangle())
                             }
-                            .background(Color.black.opacity(0.05))
+                            .background(Color(red: 0.1, green: 0.1, blue: 0.1))
                         }
-                        .cornerRadius(8)
+                        .cornerRadius(10)
                         .padding(.horizontal)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 20)
                     }
                 }
             }
@@ -192,14 +207,6 @@ struct ConsoleLogsView: View {
     private func formatTime(date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(from: date)
-    }
-    
-    // Helper to display time with offset for log display
-    private func timeString(minutesAgo: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let date = Calendar.current.date(byAdding: .minute, value: -minutesAgo, to: Date()) ?? Date()
         return formatter.string(from: date)
     }
     
