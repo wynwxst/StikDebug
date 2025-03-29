@@ -26,7 +26,7 @@ NSDictionary<NSString*, NSString*>* list_installed_apps(TcpProviderHandle* provi
 
     void *apps = NULL;
     size_t apps_len = 0;
-    err = installation_proxy_get_apps(client, NULL, NULL, 0, &apps, &apps_len);
+    err = installation_proxy_get_apps(client, "User", NULL, 0, &apps, &apps_len);
     if (err != IdeviceSuccess) {
         installation_proxy_client_free(client);
         *error = @"Failed to get apps";
