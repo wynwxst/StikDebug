@@ -70,14 +70,7 @@ struct HeartbeatApp: App {
                                         }
                                     } else if let vpn_error {
                                         showAlert(title: "Error", message: "EM Proxy failed to connect: \(vpn_error)", showOk: true) { _ in
-                                            // Add code here to exit the application
-                                            exit(0)  // This will terminate the app immediately
-                                            
-                                            // Or for a more graceful exit in iOS:
-                                            // UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
-                                            // DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                            //     exit(0)
-                                            // }
+                                            exit(0)
                                         }
                                     }
                                 }
@@ -207,7 +200,7 @@ struct HeartbeatApp: App {
         
         // Schedule the timeout
         if let workItem = timeoutWorkItem {
-            DispatchQueue.global().asyncAfter(deadline: .now() + 10, execute: workItem)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: workItem)
         }
     }
 }
