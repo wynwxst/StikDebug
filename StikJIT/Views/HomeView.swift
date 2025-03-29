@@ -56,13 +56,14 @@ struct HomeView: View {
                     
                     if pairingFileExists {
                         // Got a pairing file, show apps
-                        isShowingInstalledApps = true
-                        
                         if !isMounted() {
                             showAlert(title: "Device Not Mounted", message: "The Developer Disk Image has not been mounted yet. Check in settings for more information.", showOk: true) { cool in
                                 // No Need
                             }
+                            return
                         }
+                        
+                        isShowingInstalledApps = true
                         
                     } else {
                         // No pairing file yet, let's get one
