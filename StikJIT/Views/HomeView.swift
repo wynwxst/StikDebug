@@ -265,7 +265,6 @@ struct HomeView: View {
         
         DispatchQueue.global(qos: .background).async {
             JITEnableContext.shared().debugApp(withBundleID: bundleID, logger: { message in
-                // Safely unwrap the optional message
                 if let message = message {
                     // Log messages from the JIT process
                     LogManager.shared.addInfoLog(message)
