@@ -14,7 +14,7 @@ struct ConsoleLogsView: View {
     @State private var autoScroll = true
     @State private var scrollView: ScrollViewProxy? = nil
     
-    // Add these state variables for alert handling
+    // Alert handlin
     @State private var showingExportAlert = false
     @State private var showingCopyAlert = false
     @State private var alertMessage = ""
