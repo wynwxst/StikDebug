@@ -181,27 +181,28 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
+                            // Status indicator with icon
                             HStack(spacing: 12) {
                                 Image(systemName: mounted || (mountProg.mountProgress == 100) ? "checkmark.circle.fill" : "xmark.circle.fill")
                                     .font(.system(size: 24))
                                     .foregroundColor(mounted || (mountProg.mountProgress == 100) ? .green : .red)
                                 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(mounted || (mountProg.mountProgress == 100) ? "Successfully Mounted" : "Not Mounted")
-                                        .font(.system(.body, design: .rounded))
-                                        .fontWeight(.medium)
-                                    
-                                    if !(mounted || (mountProg.mountProgress == 100)) {
-                                        Text("Import pairing file and restart the app to mount DDI")
-                                            .font(.system(.caption, design: .rounded))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
+                                Text(mounted || (mountProg.mountProgress == 100) ? "Successfully Mounted" : "Not Mounted")
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.medium)
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(UIColor.tertiarySystemBackground))
                             .cornerRadius(12)
+                            
+                            // Helper text shown separately below the status indicator
+                            if !(mounted || (mountProg.mountProgress == 100)) {
+                                Text("Import pairing file and restart the app to mount DDI")
+                                    .font(.system(.caption, design: .rounded))
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal, 4)
+                            }
                             
                             // Only show progress if actively mounting
                             if mountProg.mountProgress > 0 && mountProg.mountProgress < 100 && !mounted {
