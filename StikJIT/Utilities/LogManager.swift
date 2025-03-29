@@ -34,8 +34,26 @@ class LogManager: ObservableObject {
     }
     
     func addLog(message: String, type: LogEntry.LogType) {
+        // Remove redundant prefixes from the message
+        var cleanMessage = message
+        
+        // Clean up common prefixes that match the log type
+        let prefixesToRemove = [
+            "Info: ", "INFO: ", "Information: ",
+            "Error: ", "ERROR: ", "ERR: ",
+            "Debug: ", "DEBUG: ", "DBG: ",
+            "Warning: ", "WARN: ", "WARNING: "
+        ]
+        
+        for prefix in prefixesToRemove {
+            if cleanMessage.hasPrefix(prefix) {
+                cleanMessage = String(cleanMessage.dropFirst(prefix.count))
+                break
+            }
+        }
+        
         DispatchQueue.main.async {
-            self.logs.append(LogEntry(timestamp: Date(), type: type, message: message))
+            self.logs.append(LogEntry(timestamp: Date(), type: type, message: cleanMessage))
             
             if type == .error {
                 self.errorCount += 1
