@@ -21,11 +21,11 @@ struct ConsoleLogsView: View {
                     .edgesIgnoringSafeArea(.all)
                 
                 VStack(spacing: 0) {
-                    // Terminal-style logs area
+                    // Terminal logs area (made it look somewhat like feathers implementation)
                     ScrollViewReader { proxy in
                         ScrollView {
                             VStack(spacing: 0) {
-                                // Device Information
+                                // Device Information (all thw way on top)
                                 ForEach(["Version: \(UIDevice.current.systemVersion)",
                                          "Name: \(UIDevice.current.name)",
                                          "Model: \(UIDevice.current.model)",
@@ -40,7 +40,7 @@ struct ConsoleLogsView: View {
                                 
                                 Spacer()
                                 
-                                // Log entries with terminal-style alignment (no indentation on wrapped lines)
+                                // Log entries 
                                 ForEach(logManager.logs) { logEntry in
                                     Text(AttributedString(createLogAttributedString(logEntry)))
                                         .font(.system(size: 11, design: .monospaced))
@@ -66,7 +66,7 @@ struct ConsoleLogsView: View {
                     
                     Spacer()
                     
-                    // Bottom section with error count and action buttons
+
                     VStack(spacing: 16) {
                         // Error count with red theme
                         HStack {
@@ -82,7 +82,7 @@ struct ConsoleLogsView: View {
                         
                         // Action buttons with dark background
                         VStack(spacing: 1) {
-                            // Share button
+
                             Button(action: {
                                 let logs = logManager.logs.map { "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" }.joined(separator: "\n")
                                 
@@ -188,8 +188,7 @@ struct ConsoleLogsView: View {
         .navigationViewStyle(StackNavigationViewStyle())
     }
     
-    // Creates an NSAttributedString that combines timestamp, type, and message
-    // with proper styling for each component
+
     private func createLogAttributedString(_ logEntry: LogManager.LogEntry) -> NSAttributedString {
         let fullString = NSMutableAttributedString()
         
@@ -251,7 +250,7 @@ struct ConsoleLogsView: View {
     }
 }
 
-// Preview provider
+
 struct ConsoleLogsView_Previews: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
