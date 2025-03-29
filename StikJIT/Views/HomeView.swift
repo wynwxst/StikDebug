@@ -53,16 +53,17 @@ struct HomeView: View {
                 // Main action button - changes based on whether we have a pairing file
                 Button(action: {
                     
-                    if !isMounted() {
-                        showAlert(title: "Device Not Mounted", message: "The Developer Disk Image has not been mounted yet. Check in settings for more information.", showOk: true) { cool in
-                            // No Need
-                        }
-                    }
-                    
                     
                     if pairingFileExists {
                         // Got a pairing file, show apps
                         isShowingInstalledApps = true
+                        
+                        if !isMounted() {
+                            showAlert(title: "Device Not Mounted", message: "The Developer Disk Image has not been mounted yet. Check in settings for more information.", showOk: true) { cool in
+                                // No Need
+                            }
+                        }
+                        
                     } else {
                         // No pairing file yet, let's get one
                         isShowingPairingFilePicker = true
