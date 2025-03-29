@@ -207,7 +207,6 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
     if (attach_cmd == NULL) {
         logger("Failed to create attach command");
         debug_proxy_free(debug_proxy);
-        adapter_free(debug_adapter);
         xpc_service_free(debug_service);
         process_control_free(process_control);
         remote_server_free(remote_server);
