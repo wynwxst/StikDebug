@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+//objc bridge for logs
 @objc class LogManagerBridge: NSObject {
     @objc static let shared = LogManagerBridge()
     
