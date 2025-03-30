@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 import em_proxy
 import UniformTypeIdentifiers
 
@@ -42,28 +43,44 @@ struct HeartbeatApp: App {
             if isLoading {
                 LoadingView()
                     .onAppear {
+                        if !isConnectedToWifi() {
+                            showAlert(title: "Connection Required",
+                                    message: "Please connect to WiFi to continue",
+                                    showOk: true) { _ in
+                                exit(0)
+                            }
+                            return
+                        }
                         startProxy() { result, error in
                             if result {
-                                if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                                    Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                                        if pubHeartBeat {
-                                            isLoading = false
-                                            timer.invalidate()
-                                        } else {
-                                            if let error {
-                                                if error == InvalidHostID.rawValue {
-                                                    isPairing = true
+                                checkVPNConnection() { result, vpn_error in
+                                    if result {
+                                        if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                                            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                                                if pubHeartBeat {
+                                                    isLoading = false
+                                                    timer.invalidate()
                                                 } else {
-                                                    startHeartbeatInBackground()
+                                                    if let error {
+                                                        if error == InvalidHostID.rawValue {
+                                                            isPairing = true
+                                                        } else {
+                                                            startHeartbeatInBackground()
+                                                        }
+                                                        self.error = nil
+                                                    }
                                                 }
-                                                self.error = nil
                                             }
+                                            
+                                            startHeartbeatInBackground()
+                                        } else {
+                                            isLoading = false
+                                        }
+                                    } else if let vpn_error {
+                                        showAlert(title: "Error", message: "EM Proxy failed to connect: \(vpn_error)", showOk: true) { _ in
+                                            exit(0)
                                         }
                                     }
-                                    
-                                    startHeartbeatInBackground()
-                                } else {
-                                    isLoading = false
                                 }
                             } else if let error {
                                 showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { cool in
@@ -136,6 +153,84 @@ struct HeartbeatApp: App {
                 }
             }
         }
+    }
+    
+    private func checkVPNConnection(callback: @escaping (Bool, String?) -> Void) {
+        let host = NWEndpoint.Host("10.7.0.1")
+        let port = NWEndpoint.Port(rawValue: 62078)!
+        
+        let connection = NWConnection(host: host, port: port, using: .tcp)
+        
+        // Create a variable to hold the timeout work item
+        var timeoutWorkItem: DispatchWorkItem?
+        
+        timeoutWorkItem = DispatchWorkItem { [weak connection] in
+            if connection?.state != .ready {
+                connection?.cancel()
+                DispatchQueue.main.async {
+                    // Only call back if we haven't already
+                    if timeoutWorkItem?.isCancelled == false {
+                        callback(false, "[TIMEOUT] Wireguard is not connected. Try closing this app, turn Wireguard off and back on.")
+                    }
+                }
+            }
+        }
+        
+        connection.stateUpdateHandler = { [weak connection] state in
+            switch state {
+            case .ready:
+                // Connection succeeded - cancel the timeout
+                timeoutWorkItem?.cancel()
+                connection?.cancel()
+                DispatchQueue.main.async {
+                    callback(true, nil)
+                }
+            case .failed(let error):
+                // Connection failed - cancel the timeout
+                timeoutWorkItem?.cancel()
+                connection?.cancel()
+                DispatchQueue.main.async {
+                    if error == NWError.posix(.ETIMEDOUT) {
+                        callback(false, "Wireguard is not connected. Try closing the app, turn it off and back on.")
+                    } else if error == NWError.posix(.ECONNREFUSED) {
+                        callback(false, "Wifi is not connected. StikJIT won't work on cellular data.")
+                    } else {
+                        callback(false, "em proxy check error: \(error.localizedDescription)")
+                    }
+                }
+            default:
+                break
+            }
+        }
+        
+        // Start the connection
+        connection.start(queue: .global())
+        
+        // Schedule the timeout
+        if let workItem = timeoutWorkItem {
+            DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: workItem)
+        }
+    }
+    
+    func isConnectedToWifi() -> Bool {
+        var isWifi = false
+            let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
+            let semaphore = DispatchSemaphore(value: 0)
+            
+            monitor.pathUpdateHandler = { path in
+                isWifi = path.status == .satisfied
+                semaphore.signal()
+            }
+            
+            let queue = DispatchQueue(label: "WiFiCheckQueue")
+            monitor.start(queue: queue)
+            
+            // Wait for the result with a timeout to avoid hanging
+            let result = semaphore.wait(timeout: .now() + 2)
+            monitor.cancel()
+            
+            // Return false if we timed out
+            return result == .success && isWifi
     }
 }
 
