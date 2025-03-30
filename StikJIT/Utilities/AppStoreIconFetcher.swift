@@ -10,6 +10,7 @@ import UIKit
 // Not AppStore
 class AppStoreIconFetcher {
     static private var iconCache: [String: UIImage] = [:]
+    static private let iconFetchDispatchQueue = DispatchQueue(label: "com.stik.StikJIT.iconFetchQueue", attributes: .concurrent)
     
     static func getIcon(for bundleID: String, completion: @escaping (UIImage?) -> Void) {
         // Check cache first
@@ -18,7 +19,7 @@ class AppStoreIconFetcher {
             return
         }
         
-        Task {
+        iconFetchDispatchQueue.sync {
             do {
                 let ans = try JITEnableContext.shared.getAppIcon(withBundleId: bundleID)
                 iconCache[bundleID] = ans
