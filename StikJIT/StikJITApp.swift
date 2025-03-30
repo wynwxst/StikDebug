@@ -292,8 +292,8 @@ class MountingProgress: ObservableObject {
             mountingThread = Thread {
                 let mount = mountPersonalDDI(imagePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg").path, trustcachePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path, manifestPath: URL.documentsDirectory.appendingPathComponent("DDI/BuildManifest.plist").path, pairingFilePath: pairingpath)
                 
-                if !mount {
-                    showAlert(title: "Error", message: "An Error Occured when Mounting the DDI", showOk: true, showTryAgain: true) { cool in
+                if mount != 0 {
+                    showAlert(title: "Error", message: "An Error Occured when Mounting the DDI\nError Code: " + String(mount), showOk: true, showTryAgain: true) { cool in
                         if cool {
                             self.mount()
                         }
