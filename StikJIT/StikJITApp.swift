@@ -353,7 +353,7 @@ func startHeartbeatInBackground() {
             }
         }
         
-        JITEnableContext.shared().startHeartbeat(completionHandler: completionHandler, logger: nil)
+        JITEnableContext.shared.startHeartbeat(completionHandler: completionHandler, logger: nil)
     }
     
     heartBeat.qualityOfService = .background
