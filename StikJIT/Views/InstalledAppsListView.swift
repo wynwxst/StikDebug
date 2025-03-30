@@ -35,7 +35,6 @@ struct InstalledAppsListView: View {
                         Text("Recents")
                     }
                 }
-
                 Section {
                     ForEach(viewModel.apps.sorted(by: { $0.key < $1.key }), id: \.key) { bundleID, appName in
                         AppButton(bundleID: bundleID, appName: appName, recentApps: $recentApps, appIcons: $appIcons, onSelectApp: onSelectApp)
@@ -72,20 +71,20 @@ struct AppButton: View {
     var body: some View {
         Button(action: {
             recentApps.removeAll(where: { $0 == bundleID })
-            recentApps = [bundleID] + recentApps
-
+            recentApps.insert(bundleID, at: 0)
+            if recentApps.count > 3 {
+                recentApps = Array(recentApps.prefix(3))
+            }
             onSelectApp(bundleID)
         }) {
             HStack(spacing: 16) {
-                // App Icon
                 if let image = appIcons[bundleID] {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
                         .cornerRadius(12)
-                        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.gray.opacity(0.2),
-                                radius: 3, x: 0, y: 1)
+                        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.gray.opacity(0.2), radius: 3, x: 0, y: 1)
                 } else {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color(UIColor.systemGray5))
@@ -100,25 +99,20 @@ struct AppButton: View {
                             loadAppIcon(for: bundleID)
                         }
                 }
-
-                // App Name and Bundle ID
                 VStack(alignment: .leading, spacing: 4) {
                     Text(appName)
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(Color(.label))
-
                     Text(bundleID)
                         .font(.system(size: 15))
                         .foregroundColor(Color.gray)
                         .lineLimit(1)
                 }
-
                 Spacer()
             }
         }
     }
 
-    // Helper method to load app icon
     private func loadAppIcon(for bundleID: String) {
         AppStoreIconFetcher.getIcon(for: bundleID) { image in
             if let image = image {
