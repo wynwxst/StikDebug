@@ -14,7 +14,6 @@
 void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provider, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger) {
     int currentSessionId = *heartbeatSessionId;
     logger("DEBUG: Initializing logger...");
-    idevice_init_logger(Debug, Disabled, NULL);
     
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
