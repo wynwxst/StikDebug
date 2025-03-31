@@ -105,7 +105,7 @@ JITEnableContext* sharedJITContext = nil;
     }, [self createCLogger:logger]);
 }
 
-- (void)debugAppWithBundleID:(NSString*)bundleID isLC:(BOOL)isLC logger:(LogFunc)logger  {
+- (BOOL)debugAppWithBundleID:(NSString*)bundleID isLC:(BOOL)isLC logger:(LogFunc)logger  {
 
     if(!provider) {
         if(logger) {
