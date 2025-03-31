@@ -43,14 +43,6 @@ struct HeartbeatApp: App {
             if isLoading {
                 LoadingView()
                     .onAppear {
-                        if !isConnectedToWifi() {
-                            showAlert(title: "Connection Required",
-                                    message: "Please connect to WiFi to continue",
-                                    showOk: true) { _ in
-                                exit(0)
-                            }
-                            return
-                        }
                         startProxy() { result, error in
                             if result {
                                 checkVPNConnection() { result, vpn_error in
@@ -170,7 +162,7 @@ struct HeartbeatApp: App {
                 DispatchQueue.main.async {
                     // Only call back if we haven't already
                     if timeoutWorkItem?.isCancelled == false {
-                        callback(false, "[TIMEOUT] Wireguard is not connected. Try closing this app, turn Wireguard off and back on.")
+                        callback(false, "[TIMEOUT] The loopback VPN is not connected. Try closing this app, turn it off and back on.")
                     }
                 }
             }
@@ -191,7 +183,7 @@ struct HeartbeatApp: App {
                 connection?.cancel()
                 DispatchQueue.main.async {
                     if error == NWError.posix(.ETIMEDOUT) {
-                        callback(false, "Wireguard is not connected. Try closing the app, turn it off and back on.")
+                        callback(false, "The loopback VPN is not connected. Try closing the app, turn it off and back on.")
                     } else if error == NWError.posix(.ECONNREFUSED) {
                         callback(false, "Wifi is not connected. StikJIT won't work on cellular data.")
                     } else {
@@ -210,27 +202,6 @@ struct HeartbeatApp: App {
         if let workItem = timeoutWorkItem {
             DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: workItem)
         }
-    }
-    
-    func isConnectedToWifi() -> Bool {
-        var isWifi = false
-            let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
-            let semaphore = DispatchSemaphore(value: 0)
-            
-            monitor.pathUpdateHandler = { path in
-                isWifi = path.status == .satisfied
-                semaphore.signal()
-            }
-            
-            let queue = DispatchQueue(label: "WiFiCheckQueue")
-            monitor.start(queue: queue)
-            
-            // Wait for the result with a timeout to avoid hanging
-            let result = semaphore.wait(timeout: .now() + 2)
-            monitor.cancel()
-            
-            // Return false if we timed out
-            return result == .success && isWifi
     }
 }
 
