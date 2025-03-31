@@ -105,7 +105,7 @@ JITEnableContext* sharedJITContext = nil;
     }, [self createCLogger:logger]);
 }
 
-- (BOOL)debugAppWithBundleID:(NSString*)bundleID isLC:(BOOL)isLC logger:(LogFunc)logger  {
+- (BOOL)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger  {
 
     if(!provider) {
         if(logger) {
@@ -117,7 +117,7 @@ JITEnableContext* sharedJITContext = nil;
     
 
     
-    return debug_app(provider, [bundleID UTF8String], [self createCLogger:logger], (bool)(isLC)) == 0;
+    return debug_app(provider, [bundleID UTF8String], [self createCLogger:logger] ) == 0;
 
 }
 

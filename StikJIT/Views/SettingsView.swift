@@ -264,21 +264,7 @@ struct SettingsView: View {
                             self.mounted = isMounted()
                         }
                     }
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Misclaneous Settings")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 4)
-                            
-                            Toggle("Enable In-LiveContainer JIT", isOn: $is_lc)
-                                .padding()
-                            
-                            HomeView(is_lc: $is_lc)
-                        }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 16)
-                    }
+
                     
                     
                     // About section
@@ -442,7 +428,9 @@ struct SettingsView: View {
                     // Version info should now come after System Logs
                     HStack {
                         Spacer()
-                        Text("Version 1.1 • iOS \(UIDevice.current.systemVersion)")
+                        let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
+                        let ver = (try? String(contentsOfFile: fileURL.path)) ?? "-"
+                        Text("Version \(ver) • iOS \(UIDevice.current.systemVersion)")
                             .font(.footnote)
                             .foregroundColor(.secondary.opacity(0.8))
                         Spacer()

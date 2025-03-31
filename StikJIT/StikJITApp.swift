@@ -10,14 +10,95 @@ import Network
 import em_proxy
 import UniformTypeIdentifiers
 
+let fileManager = FileManager.default
+
+
+
+func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
+    if let url = URL(string: urlString) {
+        
+
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            
+
+            if let error = error {
+                print("Error: \(error.localizedDescription)")
+                result(nil)
+                return
+            }
+            
+
+            if let data = data, let httpResponse = response as? HTTPURLResponse {
+                
+
+                if httpResponse.statusCode == 200 {
+                    print("Response: \(httpResponse.statusCode)")
+                    
+
+                    if let DataString = String(data: data, encoding: .utf8) {
+                        result(DataString)
+                    }
+                } else {
+                    print("Received non-200 status code: \(httpResponse.statusCode)")
+                }
+            }
+        }
+        
+
+        task.resume()
+    }
+}
+
+func UpdateRetrieval() -> Bool{
+    let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
+    if !fileManager.fileExists(atPath: fileURL.path) {
+        
+        let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+        var FileContent: String = "";
+    
+        httpGet(urlString) { result in
+            if let fc = result {
+                FileContent = fc
+            }
+            
+        }
+        if (FileContent == ""){
+            do {
+                try FileContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                
+                print("Wrote to file successfully")
+            } catch {
+                print("Error writing to file: \(error)")
+            }
+        } else {
+            print("Failed to get version.txt, will try again later.")
+        }
+    }
+    let ver = try! String(contentsOfFile: fileURL.path)
+    let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+    var res = false
+    httpGet(urlString) { result in
+        if let fc = result {
+            if (ver != fc){
+                res = true
+            }
+        } // if nil then request failed so we won't throw an error
+
+    }
+    return res
+    
+    
+}
+
 @main
 struct HeartbeatApp: App {
     @State private var isLoading = true
     @State private var isPairing = false
     @State private var heartBeat = false
     @State private var error: Int32? = nil
-    @State private var show_error = false
-    @State private var error_string = ""
+    @State private var show_alert = false
+    @State private var alert_string = ""
+    @State private var alert_title = ""
     @StateObject private var mount = MountingProgress.shared
     
     let urls: [String] = [
@@ -35,11 +116,36 @@ struct HeartbeatApp: App {
     ]
     
     init() {
+        newVerCheck()
         let fixMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.fix_init(forOpeningContentTypes:asCopy:)))!
         let origMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.init(forOpeningContentTypes:asCopy:)))!
         method_exchangeImplementations(origMethod, fixMethod)
     }
+    func newVerCheck() {
+        let currentDate = Calendar.current.startOfDay(for: Date())
 
+
+        let VUA = UserDefaults.standard.object(forKey: "VersionUpdateAlert") as? Date ?? Date.distantPast
+
+
+        if currentDate > Calendar.current.startOfDay(for: VUA) {
+
+            if (UpdateRetrieval()){
+                alert_title = "Update Avaliable!"
+                let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+                httpGet(urlString) { result in
+                    if result == nil { return }
+                    alert_string = "Update to: version \(result!)!"
+                    show_alert = true
+                }
+                
+                
+            }
+
+
+            UserDefaults.standard.set(currentDate, forKey: "VersionUpdateAlert")
+        }
+    }
     var body: some Scene {
         WindowGroup {
             if isLoading {
@@ -122,8 +228,9 @@ struct HeartbeatApp: App {
                             if !fileManager.fileExists(atPath: destinationURL.path) {
                                 downloadFile(from: urlString, to: destinationURL){ result in
                                     if (result != ""){
-                                        error_string = "[Download DDI Error]: " + result
-                                        show_error = true
+                                        alert_title = "An Error has Occurred"
+                                        alert_string = "[Download DDI Error]: " + result
+                                        show_alert = true
                                     }
                                     
                                 }
@@ -132,10 +239,10 @@ struct HeartbeatApp: App {
                         }
                         
                     }
-                    .alert("An Error Occurred", isPresented: $show_error) {
+                    .alert(alert_title, isPresented: $show_alert) {
                         Button("OK", role: .cancel) { }
                     } message: {
-                        Text(error_string)
+                        Text(alert_title)
                     }
             }
         }
