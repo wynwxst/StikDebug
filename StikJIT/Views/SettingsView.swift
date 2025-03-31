@@ -27,7 +27,7 @@ struct SettingsView: View {
     
     // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
-        "Blu": "https://github.com/0-Blu.png",
+        "Stephen": "https://github.com/0-Blu.png",
         "jkcoxson": "https://github.com/jkcoxson.png",
         "Stossy11": "https://github.com/Stossy11.png",
         "Neo": "https://github.com/neoarz.png",
