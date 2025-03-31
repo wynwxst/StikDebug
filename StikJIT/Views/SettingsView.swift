@@ -48,12 +48,16 @@ struct SettingsView: View {
                     // App Logo and Username Section 
                     VStack(spacing: 16) {
                         // App Logo
-                        Image(uiImage: UIImage(named: selectedAppIcon) ?? UIImage(named: "AppIcon") ?? UIImage())
+                        Image("StikJIT")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 80, height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .padding(.top, 16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
                         
                         Text("StikJIT")
                             .font(.title2)
@@ -398,30 +402,34 @@ struct SettingsView: View {
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 6)
                     
-                    // Move System Logs section here (right after About card, before version)
+                    // System Logs card
                     SettingsCard {
                         Button(action: {
                             showingConsoleLogsView = true
                         }) {
                             HStack {
+                                Image(systemName: "terminal")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.blue)
                                 Text("System Logs")
-                                    .font(.headline)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                
                                 Spacer()
-                                
                                 Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
                                     .foregroundColor(.secondary)
                             }
-                            .contentShape(Rectangle())
-                            .padding(.vertical, 16)
+                            .padding(.vertical, 12)
                             .padding(.horizontal, 16)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 4)
+                    .sheet(isPresented: $showingConsoleLogsView) {
+                        ConsoleLogsView()
+                    }
                     
                     // Version info should now come after System Logs
                     HStack {
@@ -436,11 +444,6 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
-            }
-            
-            // Add this sheet at the end of the ZStack, before the final closing bracket
-            .sheet(isPresented: $showingConsoleLogsView) {
-                ConsoleLogsView()
             }
         }
         .fileImporter(
