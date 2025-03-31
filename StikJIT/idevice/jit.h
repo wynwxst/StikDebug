@@ -11,6 +11,6 @@
 #include "idevice.h"
 
 typedef void (^LogFuncC)(const char* message, ...);
-int debug_app(TcpProviderHandle* provider, const char *bundle_id, LogFuncC logger);
+int debug_app(TcpProviderHandle* provider, const char *bundle_id, LogFuncC logger, bool isLC);
 
 #endif /* JIT_H */

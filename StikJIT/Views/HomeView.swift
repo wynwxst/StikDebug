@@ -15,6 +15,7 @@ extension UIDocumentPickerViewController {
 }
 
 struct HomeView: View {
+    @Binding var is_lc: Bool
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
@@ -32,6 +33,10 @@ struct HomeView: View {
     
     @State private var viewDidAppeared = false
     @State private var pendingBundleIdToEnableJIT : String? = nil
+    
+    init(is_lc: Binding<Bool>? = nil) {
+        self._is_lc = is_lc ?? .constant(false)
+    }
 
     var body: some View {
         ZStack {
@@ -265,7 +270,9 @@ struct HomeView: View {
         LogManager.shared.addInfoLog("Starting JIT for \(bundleID)")
         
         DispatchQueue.global(qos: .background).async {
-            let success = JITEnableContext.shared.debugApp(withBundleID: bundleID, logger: { message in
+
+            let success = JITEnableContext.shared.debugApp(withBundleID: bundleID,isLC: is_lc, logger: { message in
+
                 if let message = message {
                     // Log messages from the JIT process
                     LogManager.shared.addInfoLog(message)
