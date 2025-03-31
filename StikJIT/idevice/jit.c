@@ -19,7 +19,7 @@
 
 #include "jit.h"
 
-int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC logger) {
+int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC logger,bool isLC) {
     // Initialize logger
     idevice_init_logger(Debug, Disabled, NULL);
     IdeviceErrorCode err = IdeviceSuccess;
@@ -99,8 +99,10 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
      * Process Control - Launch App
      *****************************************************************/
     logger("=== Launching App ===");
+    uint64_t pid;
     
     // Get the adapter back from the XPC device
+
     AdapterHandle *pc_adapter = NULL;
     err = xpc_device_adapter_into_inner(xpc_device, &pc_adapter);
     if (err != IdeviceSuccess) {
@@ -141,21 +143,25 @@ int debug_app(TcpProviderHandle* tcp_provider, const char *bundle_id, LogFuncC l
         xpc_service_free(debug_service);
         return 1;
     }
-    
-    // Launch application
-    uint64_t pid;
-    err = process_control_launch_app(process_control, bundle_id, NULL, 0, NULL, 0,
-                                     true, false, &pid);
-    if (err != IdeviceSuccess) {
-        logger("Failed to launch app: %d", err);
-        process_control_free(process_control);
-        remote_server_free(remote_server);
-        xpc_service_free(pc_service);
-        xpc_service_free(debug_service);
-        return 1;
+    if(!isLC){
+        
+        // Launch application
+  
+        err = process_control_launch_app(process_control, bundle_id, NULL, 0, NULL, 0,
+                                         true, false, &pid);
+        if (err != IdeviceSuccess) {
+            logger("Failed to launch app: %d", err);
+            process_control_free(process_control);
+            remote_server_free(remote_server);
+            xpc_service_free(pc_service);
+            xpc_service_free(debug_service);
+            return 1;
+        }
+        
+        logger("Successfully launched app with PID: %" PRIu64 "", pid);
+    } else {
+        pid = getpid();
     }
-    logger("Successfully launched app with PID: %" PRIu64 "", pid);
-    
     // Disable memory limit for PID
     err = process_control_disable_memory_limit(process_control, pid);
     if (err != IdeviceSuccess) {

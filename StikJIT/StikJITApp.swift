@@ -25,7 +25,7 @@ struct HeartbeatApp: App {
         "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/Image.dmg",
         "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/Image.dmg.trustcache"
     ]
-
+    
     let outputDir: String = "DDI"
 
     let outputFiles: [String] = [

@@ -15,6 +15,7 @@ extension UIDocumentPickerViewController {
 }
 
 struct HomeView: View {
+    @Binding var is_lc: Bool
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "#000000") ?? Color.primaryBackground

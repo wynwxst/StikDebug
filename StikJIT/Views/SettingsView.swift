@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
+    @State private var is_lc = false
     
     @StateObject private var mountProg = MountingProgress.shared
     
@@ -30,7 +31,8 @@ struct SettingsView: View {
         "Stossy11": "https://github.com/Stossy11.png",
         "Neo": "https://github.com/neoarz.png",
         "Se2crid": "https://github.com/Se2crid.png",
-        "HugeBlack": "https://github.com/HugeBlack.png"
+        "HugeBlack": "https://github.com/HugeBlack.png",
+        "Wynwxst": "https://github.com/Wynwxst.png"
     ]
 
     var body: some View {
@@ -240,6 +242,21 @@ struct SettingsView: View {
                             self.mounted = isMounted()
                         }
                     }
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Misclaneous Settings")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            Toggle("Enable in-LiveContainer JIT", isOn: $is_lc)
+                                .padding()
+                            
+                            HomeView(is_lc: $is_lc)
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                    }
                     
                     
                     // About section
@@ -324,6 +341,8 @@ struct SettingsView: View {
                                     CollaboratorRow(name: "Se2crid", url: "https://github.com/Se2crid", imageUrl: developerProfiles["Se2crid"] ?? "")
                                     
                                     CollaboratorRow(name: "HugeBlack", url: "https://github.com/HugeBlack", imageUrl: developerProfiles["HugeBlack"] ?? "")
+                                    
+                                    CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
                             }
                             
