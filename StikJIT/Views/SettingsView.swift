@@ -298,7 +298,7 @@ struct SettingsView: View {
                                         ProfileImage(url: developerProfiles["Stephen"] ?? "")
                                             .frame(width: 60, height: 60)
                                         
-                                        Text("Blu")
+                                        Text("Stephen")
                                             .fontWeight(.semibold)
                                         
                                         Text("App Creator")
