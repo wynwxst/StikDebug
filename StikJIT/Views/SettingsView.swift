@@ -374,7 +374,7 @@ struct SettingsView: View {
                                 // New Discord Link
                                 LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
                                 
-                                // Your new shortcut link
+                                //shortcut link
                                 LinkRow(icon: "sparkles", title: "iOS Shortcut", url: "https://www.icloud.com/shortcuts/f0c11c0a76654e63b18d8c59d82e152e")
                                 
                                 // StikNES promotion
