@@ -96,7 +96,7 @@ JITEnableContext* sharedJITContext = nil;
         completionHandler(result,[NSString stringWithCString:message encoding:NSASCIIStringEncoding]);
     }, [self createCLogger:logger]);
 }
-- (void)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger isLC:(BOOL)isLC {
+- (void)debugAppWithBundleID:(NSString*)bundleID isLC:(BOOL)isLC logger:(LogFunc)logger  {
     if(!provider) {
         if(logger) {
             logger(@"Provider not initialized!");

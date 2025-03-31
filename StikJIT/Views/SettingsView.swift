@@ -251,7 +251,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            Toggle("Enable in-LiveContainer JIT", isOn: $is_lc)
+                            Toggle("Enable In-LiveContainer JIT", isOn: $is_lc)
                                 .padding()
                             
                             HomeView(is_lc: $is_lc)

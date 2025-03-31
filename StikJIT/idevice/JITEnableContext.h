@@ -15,6 +15,6 @@ typedef void (^LogFunc)(NSString *message);
 + (instancetype)shared;
 - (IdevicePairingFile*)getPairingFileWithError:(NSError**)error;
 - (void)startHeartbeatWithCompletionHandler:(HeartbeatCompletionHandler)completionHandler logger:(LogFunc)logger;
-- (void)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger;
+- (void)debugAppWithBundleID:(NSString*)bundleID isLC:(BOOL)isLC logger:(LogFunc)logger;
 - (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError**)error;
 @end
