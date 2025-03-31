@@ -23,6 +23,7 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
 
             if let error = error {
                 print("Error: \(error.localizedDescription)")
+                result(nil)
                 return
             }
             
@@ -75,13 +76,16 @@ func UpdateRetrieval() -> Bool{
     }
     let ver = try! String(contentsOfFile: fileURL.path)
     let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
-    var res = false;
+    var res = false
     httpGet(urlString) { result in
-        if (ver != result){
-            res = true;
-        }
+        if let fc = result {
+            if (ver != fc){
+                res = true
+            }
+        } // if nil then request failed so we won't throw an error
+
     }
-    return res;
+    return res
     
     
 }
@@ -130,9 +134,11 @@ struct HeartbeatApp: App {
                 alert_title = "Update Avaliable!"
                 let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
                 httpGet(urlString) { result in
-                    alert_string = "Update to: v" + result!
+                    if result == nil { return }
+                    alert_string = "Update to: version \(result!)!"
+                    show_alert = true
                 }
-                show_alert = true
+                
                 
             }
 

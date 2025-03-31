@@ -413,7 +413,7 @@ struct SettingsView: View {
                     HStack {
                         Spacer()
                         let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
-                        let ver = try! String(contentsOfFile: fileURL.path)
+                        let ver = (try? String(contentsOfFile: fileURL.path)) ?? "-"
                         Text("Version \(ver) • iOS \(UIDevice.current.systemVersion)")
                             .font(.footnote)
                             .foregroundColor(.secondary.opacity(0.8))
