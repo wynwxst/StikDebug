@@ -27,6 +27,8 @@ struct SettingsView: View {
     
     @State private var showingConsoleLogsView = false
     
+    @State private var remoteVersion: String = "-"
+    
     // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
         "Stephen": "https://github.com/0-Blu.png",
@@ -433,11 +435,20 @@ struct SettingsView: View {
                     // Version info should now come after System Logs
                     HStack {
                         Spacer()
-                        let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
-                        let ver = (try? String(contentsOfFile: fileURL.path)) ?? "-"
-                        Text("Version \(ver) • iOS \(UIDevice.current.systemVersion)")
-                            .font(.footnote)
-                            .foregroundColor(.secondary.opacity(0.8))
+                        
+                        if remoteVersion == "-" {
+                            Text("Checking version...")
+                                .font(.footnote)
+                                .foregroundColor(.secondary.opacity(0.8))
+                                .onAppear {
+                                    fetchVersionFromGitHub()
+                                }
+                        } else {
+                            Text("Version \(remoteVersion) • iOS \(UIDevice.current.systemVersion)")
+                                .font(.footnote)
+                                .foregroundColor(.secondary.opacity(0.8))
+                        }
+                        
                         Spacer()
                     }
                     .padding(.top, 8)
@@ -562,6 +573,25 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
         .padding(.horizontal)
+    }
+
+    private func fetchVersionFromGitHub() {
+        let versionURL = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+        
+        guard let url = URL(string: versionURL) else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil else {
+                print("Failed to fetch version: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            if let versionString = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                DispatchQueue.main.async {
+                    self.remoteVersion = versionString
+                }
+            }
+        }.resume()
     }
 }
 
