@@ -34,7 +34,7 @@ struct SettingsView: View {
         "Stossy11": "https://github.com/Stossy11.png",
         "Neo": "https://github.com/neoarz.png",
         "Se2crid": "https://github.com/Se2crid.png",
-        "HugeBlack": "https://github.com/HugeBlack.png",
+        "Huge_Black": "https://github.com/HugeBlack.png",
         "Wynwxst": "https://github.com/Wynwxst.png"
     ]
 
