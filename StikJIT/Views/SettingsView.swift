@@ -48,12 +48,16 @@ struct SettingsView: View {
                     // App Logo and Username Section 
                     VStack(spacing: 16) {
                         // App Logo
-                        Image(uiImage: UIImage(named: selectedAppIcon) ?? UIImage(named: "AppIcon") ?? UIImage())
+                        Image("StikJIT")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 80, height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                             .padding(.top, 16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
                         
                         Text("StikJIT")
                             .font(.title2)
@@ -273,11 +277,10 @@ struct SettingsView: View {
                             
                             // Main Developers 
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Developers")
+                                Text("Creators")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
-                              
                                 HStack(spacing: 16) {
                                     // App Creator
                                     VStack(spacing: 8) {
@@ -332,7 +335,7 @@ struct SettingsView: View {
                             
                             // Collaborators in vertical stack
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Collaborators")
+                                Text("Developers")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
@@ -349,65 +352,83 @@ struct SettingsView: View {
                                     CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
                             }
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                    }
+                    .padding(.bottom, 4)
+                    
+                    // NEW SEPARATE LINKS CARD
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Links")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
                             
-                            Divider()
-                                .padding(.vertical, 8)
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Links")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                            VStack(spacing: 6) {
+                                // Existing Links
+                                LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
+                                LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
                                 
-                                VStack(spacing: 6) {
-                                    LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
-                                    LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
-                                    
-                                    // StikNES promotion - moved here as requested
-                                    Button(action: {
-                                        if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
-                                            UIApplication.shared.open(url)
-                                        }
-                                    }) {
-                                        HStack {
-                                            Text("Like this app? Check out StikNES!")
-                                                .foregroundColor(.secondary)
-                                            Spacer()
-                                            Image(systemName: "gamecontroller.fill")
-                                                .font(.system(size: 18))
-                                                .foregroundColor(.blue)
-                                        }
+                                // New Discord Link
+                                LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
+                                
+                                //shortcut link
+                                LinkRow(icon: "sparkles", title: "iOS Shortcut", url: "https://www.icloud.com/shortcuts/f0c11c0a76654e63b18d8c59d82e152e")
+                                
+                                // StikNES promotion
+                                Button(action: {
+                                    if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
+                                        UIApplication.shared.open(url)
                                     }
-                                    .padding(.vertical, 8)
+                                }) {
+                                    HStack {
+                                        Text("Like this app? Check out StikNES!")
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Image(systemName: "gamecontroller")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.blue)
+                                            .frame(width: 24)
+                                    }
                                 }
+                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 4)
                     
-                    // Move System Logs section here (right after About card, before version)
+                    // System Logs card
                     SettingsCard {
                         Button(action: {
                             showingConsoleLogsView = true
                         }) {
                             HStack {
+                                Image(systemName: "terminal")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.blue)
                                 Text("System Logs")
-                                    .font(.headline)
+                                    .fontWeight(.medium)
                                     .foregroundColor(.primary)
-                                
                                 Spacer()
-                                
                                 Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
                                     .foregroundColor(.secondary)
                             }
-                            .contentShape(Rectangle())
-                            .padding(.vertical, 16)
+                            .padding(.vertical, 12)
                             .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 4)
+                    .sheet(isPresented: $showingConsoleLogsView) {
+                        ConsoleLogsView()
+                    }
                     
                     // Version info should now come after System Logs
                     HStack {
@@ -424,11 +445,6 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
-            }
-            
-            // Add this sheet at the end of the ZStack, before the final closing bracket
-            .sheet(isPresented: $showingConsoleLogsView) {
-                ConsoleLogsView()
             }
         }
         .fileImporter(
