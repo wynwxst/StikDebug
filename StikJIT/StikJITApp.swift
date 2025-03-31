@@ -11,7 +11,8 @@ import em_proxy
 import UniformTypeIdentifiers
 
 let fileManager = FileManager.default
-let one_time_hardcoded_version = "1.0.0"
+
+
 
 func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
     if let url = URL(string: urlString) {
@@ -50,11 +51,26 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
 func UpdateRetrieval() -> Bool{
     let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
     if !fileManager.fileExists(atPath: fileURL.path) {
-        do {
-            try one_time_hardcoded_version.write(to: fileURL, atomically: true, encoding: .utf8)
-            print("Wrote to file successfully")
-        } catch {
-            print("Error writing to file: \(error)")
+        
+        let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+        var FileContent: String = "";
+    
+        httpGet(urlString) { result in
+            if let fc = result {
+                FileContent = fc
+            }
+            
+        }
+        if (FileContent == ""){
+            do {
+                try FileContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                
+                print("Wrote to file successfully")
+            } catch {
+                print("Error writing to file: \(error)")
+            }
+        } else {
+            print("Failed to get version.txt, will try again later.")
         }
     }
     let ver = try! String(contentsOfFile: fileURL.path)
