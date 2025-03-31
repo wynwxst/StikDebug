@@ -27,6 +27,8 @@ struct SettingsView: View {
     
     @State private var showingConsoleLogsView = false
     
+    @State private var remoteVersion: String = "-"
+    
     // Developer profile image URLs 
     private let developerProfiles: [String: String] = [
         "Stephen": "https://github.com/0-Blu.png",
@@ -47,17 +49,19 @@ struct SettingsView: View {
                 VStack(spacing: 12) {
                     // App Logo and Username Section 
                     VStack(spacing: 16) {
-                        // App Logo
-                        Image("StikJIT")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .padding(.top, 16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                            )
+                        // bruh why how did i forget to add this lol
+                        VStack {
+                            Image("StikJIT")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        .padding(.top, 16)
                         
                         Text("StikJIT")
                             .font(.title2)
@@ -433,11 +437,20 @@ struct SettingsView: View {
                     // Version info should now come after System Logs
                     HStack {
                         Spacer()
-                        let fileURL = URL.documentsDirectory.appendingPathComponent("version.txt")
-                        let ver = (try? String(contentsOfFile: fileURL.path)) ?? "-"
-                        Text("Version \(ver) • iOS \(UIDevice.current.systemVersion)")
-                            .font(.footnote)
-                            .foregroundColor(.secondary.opacity(0.8))
+                        
+                        if remoteVersion == "-" {
+                            Text("Checking version...")
+                                .font(.footnote)
+                                .foregroundColor(.secondary.opacity(0.8))
+                                .onAppear {
+                                    fetchVersionFromGitHub()
+                                }
+                        } else {
+                            Text("Version \(remoteVersion) • iOS \(UIDevice.current.systemVersion)")
+                                .font(.footnote)
+                                .foregroundColor(.secondary.opacity(0.8))
+                        }
+                        
                         Spacer()
                     }
                     .padding(.top, 8)
@@ -562,6 +575,25 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
         .padding(.horizontal)
+    }
+
+    private func fetchVersionFromGitHub() {
+        let versionURL = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
+        
+        guard let url = URL(string: versionURL) else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil else {
+                print("Failed to fetch version: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            if let versionString = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                DispatchQueue.main.async {
+                    self.remoteVersion = versionString
+                }
+            }
+        }.resume()
     }
 }
 
