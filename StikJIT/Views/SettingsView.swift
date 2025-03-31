@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
+    @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
     @State private var isShowingPairingFilePicker = false
 
     @State private var selectedBackgroundColor: Color = Color.primaryBackground
@@ -32,7 +33,7 @@ struct SettingsView: View {
         "Stossy11": "https://github.com/Stossy11.png",
         "Neo": "https://github.com/neoarz.png",
         "Se2crid": "https://github.com/Se2crid.png",
-        "HugeBlack": "https://github.com/HugeBlack.png"
+        "Huge_Black": "https://github.com/HugeBlack.png"
     ]
 
     var body: some View {
@@ -88,6 +89,21 @@ struct SettingsView: View {
                                 .onChange(of: selectedBackgroundColor) { newColor in
                                     saveCustomBackgroundColor(newColor)
                                 }
+                                .foregroundColor(.primary)
+                                .padding(.vertical, 6)
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                    }
+                    
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Behavior")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            Toggle("Automatically Quit After Enabling JIT", isOn: $doAutoQuitAfterEnablingJIT)
                                 .foregroundColor(.primary)
                                 .padding(.vertical, 6)
                         }

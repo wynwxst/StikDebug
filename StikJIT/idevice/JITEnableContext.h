@@ -16,7 +16,7 @@ typedef void (^LogFunc)(NSString *message);
 @property (class, readonly)JITEnableContext* shared;
 - (IdevicePairingFile*)getPairingFileWithError:(NSError**)error;
 - (void)startHeartbeatWithCompletionHandler:(HeartbeatCompletionHandler)completionHandler logger:(LogFunc)logger;
-- (void)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger;
+- (BOOL)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger;
 - (NSDictionary<NSString*, NSString*>*)getAppListWithError:(NSError**)error;
 - (UIImage*)getAppIconWithBundleId:(NSString*)bundleId error:(NSError**)error;
 @end

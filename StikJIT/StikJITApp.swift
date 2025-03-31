@@ -51,10 +51,6 @@ struct HeartbeatApp: App {
                             }
                             return
                         }
-                        var log_path = URL.documentsDirectory.appendingPathComponent("idevice_log.txt").path.utf8CString
-                        log_path.withUnsafeMutableBufferPointer { buffer in
-                            idevice_init_logger(Debug, Debug, buffer.baseAddress)
-                        }
                         startProxy() { result, error in
                             if result {
                                 checkVPNConnection() { result, vpn_error in
