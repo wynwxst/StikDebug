@@ -18,6 +18,7 @@ struct HomeView: View {
     @Binding var is_lc: Bool
     @AppStorage("username") private var username = "User"
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
+    @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
     @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "#000000") ?? Color.primaryBackground
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @AppStorage("bundleID") private var bundleID: String = ""
@@ -269,7 +270,9 @@ struct HomeView: View {
         LogManager.shared.addInfoLog("Starting JIT for \(bundleID)")
         
         DispatchQueue.global(qos: .background).async {
+
             JITEnableContext.shared().debugApp(withBundleID: bundleID,isLC: is_lc, logger: { message in
+
                 if let message = message {
                     // Log messages from the JIT process
                     LogManager.shared.addInfoLog(message)
@@ -279,6 +282,10 @@ struct HomeView: View {
             DispatchQueue.main.async {
                 LogManager.shared.addInfoLog("JIT process completed for \(bundleID)")
                 isProcessing = false
+                
+                if success && doAutoQuitAfterEnablingJIT {
+                    exit(0)
+                }
             }
         }
     }
@@ -293,7 +300,7 @@ class InstalledAppsViewModel: ObservableObject {
     
     func loadApps() {
         do {
-            self.apps = try JITEnableContext.shared().getAppList()
+            self.apps = try JITEnableContext.shared.getAppList()
         } catch {
             print(error)
             self.apps = [:]
