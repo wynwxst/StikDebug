@@ -49,17 +49,19 @@ struct SettingsView: View {
                 VStack(spacing: 12) {
                     // App Logo and Username Section 
                     VStack(spacing: 16) {
-                        // App Logo
-                        Image("StikJIT")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .padding(.top, 16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                            )
+                        // bruh why how did i forget to add this lol
+                        VStack {
+                            Image("StikJIT")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                        }
+                        .padding(.top, 16)
                         
                         Text("StikJIT")
                             .font(.title2)
