@@ -295,7 +295,6 @@ struct SettingsView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
-                              
                                 HStack(spacing: 16) {
                                     // App Creator
                                     VStack(spacing: 8) {
@@ -367,42 +366,51 @@ struct SettingsView: View {
                                     CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
                             }
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                    }
+                    .padding(.bottom, 4)
+                    
+                    // NEW SEPARATE LINKS CARD
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Links")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
                             
-                            Divider()
-                                .padding(.vertical, 8)
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Links")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                            VStack(spacing: 6) {
+                                // Existing Links
+                                LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
+                                LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
                                 
-                                VStack(spacing: 6) {
-                                    LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
-                                    LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
-                                    
-                                    // StikNES promotion - moved here as requested
-                                    Button(action: {
-                                        if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
-                                            UIApplication.shared.open(url)
-                                        }
-                                    }) {
-                                        HStack {
-                                            Text("Like this app? Check out StikNES!")
-                                                .foregroundColor(.secondary)
-                                            Spacer()
-                                            Image(systemName: "gamecontroller.fill")
-                                                .font(.system(size: 18))
-                                                .foregroundColor(.blue)
-                                        }
+                                // New Discord Link
+                                LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
+                                
+                                // StikNES promotion
+                                Button(action: {
+                                    if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
+                                        UIApplication.shared.open(url)
                                     }
-                                    .padding(.vertical, 8)
+                                }) {
+                                    HStack {
+                                        Text("Like this app? Check out StikNES!")
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Image(systemName: "gamecontroller")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.blue)
+                                            .frame(width: 24)
+                                    }
                                 }
+                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
-                    .padding(.bottom, 6)
+                    .padding(.bottom, 4)
                     
                     // System Logs card
                     SettingsCard {
