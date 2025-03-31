@@ -281,10 +281,10 @@ struct SettingsView: View {
                                 HStack(spacing: 16) {
                                     // App Creator
                                     VStack(spacing: 8) {
-                                        ProfileImage(url: developerProfiles["Blu"] ?? "")
+                                        ProfileImage(url: developerProfiles["Stephen"] ?? "")
                                             .frame(width: 60, height: 60)
                                         
-                                        Text("Blu")
+                                        Text("Stephen")
                                             .fontWeight(.semibold)
                                         
                                         Text("App Creator")
@@ -344,7 +344,7 @@ struct SettingsView: View {
                                     
                                     CollaboratorRow(name: "Se2crid", url: "https://github.com/Se2crid", imageUrl: developerProfiles["Se2crid"] ?? "")
                                     
-                                    CollaboratorRow(name: "HugeBlack", url: "https://github.com/HugeBlack", imageUrl: developerProfiles["HugeBlack"] ?? "")
+                                    CollaboratorRow(name: "Huge_Black", url: "https://github.com/HugeBlack", imageUrl: developerProfiles["Huge_Black"] ?? "")
                                     
                                     CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
@@ -412,7 +412,7 @@ struct SettingsView: View {
                     // Version info should now come after System Logs
                     HStack {
                         Spacer()
-                        Text("Version 1.0 • iOS \(UIDevice.current.systemVersion)")
+                        Text("Version 1.1 • iOS \(UIDevice.current.systemVersion)")
                             .font(.footnote)
                             .foregroundColor(.secondary.opacity(0.8))
                         Spacer()
