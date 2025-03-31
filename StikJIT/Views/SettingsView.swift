@@ -260,21 +260,7 @@ struct SettingsView: View {
                             self.mounted = isMounted()
                         }
                     }
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Misclaneous Settings")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 4)
-                            
-                            Toggle("Enable In-LiveContainer JIT", isOn: $is_lc)
-                                .padding()
-                            
-                            HomeView(is_lc: $is_lc)
-                        }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 16)
-                    }
+
                     
                     
                     // About section
