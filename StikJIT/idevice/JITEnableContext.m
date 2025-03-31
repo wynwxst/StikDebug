@@ -29,6 +29,14 @@ JITEnableContext* sharedJITContext = nil;
     return sharedJITContext;
 }
 
+- (instancetype)init {
+    NSFileManager* fm = [NSFileManager defaultManager];
+    NSURL* docPathUrl = [fm URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    NSURL* pairingFileURL = [docPathUrl URLByAppendingPathComponent:@"idevice_log.txt"];
+    idevice_init_logger(Debug, Debug, (char*)pairingFileURL.path.UTF8String);
+    return self;
+}
+
 - (NSError*)errorWithStr:(NSString*)str code:(int)code {
     return [NSError errorWithDomain:@"StikJIT" code:code userInfo:@{NSLocalizedDescriptionKey: str}];
 }
@@ -96,16 +104,16 @@ JITEnableContext* sharedJITContext = nil;
         completionHandler(result,[NSString stringWithCString:message encoding:NSASCIIStringEncoding]);
     }, [self createCLogger:logger]);
 }
-- (void)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger {
+- (BOOL)debugAppWithBundleID:(NSString*)bundleID logger:(LogFunc)logger {
     if(!provider) {
         if(logger) {
             logger(@"Provider not initialized!");
         }
         NSLog(@"Provider not initialized!");
-        return;
+        return NO;
     }
     
-    debug_app(provider, [bundleID UTF8String], [self createCLogger:logger]);
+    return debug_app(provider, [bundleID UTF8String], [self createCLogger:logger]) == 0;
 }
 
 
@@ -119,6 +127,23 @@ JITEnableContext* sharedJITContext = nil;
     
     NSString* errorStr = nil;
     NSDictionary<NSString*, NSString*>* ans = list_installed_apps(provider, &errorStr);
+    if(errorStr){
+        *error = [self errorWithStr:errorStr code:-17];
+        return nil;
+    } else {
+        return ans;
+    }
+}
+
+- (UIImage*)getAppIconWithBundleId:(NSString*)bundleId error:(NSError**)error {
+    if(!provider) {
+        NSLog(@"Provider not initialized!");
+        *error = [self errorWithStr:@"Provider not initialized!" code:-1];
+        return nil;
+    }
+    
+    NSString* errorStr = nil;
+    UIImage* ans = getAppIcon(provider, bundleId, &errorStr);
     if(errorStr){
         *error = [self errorWithStr:errorStr code:-17];
         return nil;
