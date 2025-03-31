@@ -90,7 +90,7 @@ UIImage* getAppIcon(TcpProviderHandle* provider, NSString* bundleID, NSString** 
     IdeviceErrorCode err = IdeviceSuccess;
 
     SpringBoardServicesClientHandle *client = NULL;
-    springboard_services_proxy_connect_tcp(provider, &client);
+    springboard_services_connect_tcp(provider, &client);
     if (err != IdeviceSuccess) {
         *error = @"Failed to connect to SpringBoard Services";
         return nil;
@@ -98,9 +98,9 @@ UIImage* getAppIcon(TcpProviderHandle* provider, NSString* bundleID, NSString** 
     
     void *pngData = NULL;
     size_t data_len = 0;
-    err = springboard_services_proxy_get_icon(client, [bundleID UTF8String], &pngData, &data_len);
+    err = springboard_services_get_icon(client, [bundleID UTF8String], &pngData, &data_len);
     if (err != IdeviceSuccess) {
-        springboard_services_proxy_free(client);
+        springboard_services_free(client);
         *error = @"Failed to get app icon";
         return nil;
     }

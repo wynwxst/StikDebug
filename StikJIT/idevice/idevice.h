@@ -2011,13 +2011,13 @@ enum IdeviceErrorCode idevice_usbmuxd_unix_addr_new(const char *addr,
  */
 void idevice_usbmuxd_addr_free(struct UsbmuxdAddrHandle *usbmuxd_addr);
 
-enum IdeviceErrorCode springboard_services_proxy_connect_tcp(struct TcpProviderHandle *provider,
+enum IdeviceErrorCode springboard_services_connect_tcp(struct TcpProviderHandle *provider,
                                                              struct SpringBoardServicesClientHandle **client);
 
-enum IdeviceErrorCode springboard_services_proxy_connect_usbmuxd(struct UsbmuxdProviderHandle *provider,
+enum IdeviceErrorCode springboard_services_connect_usbmuxd(struct UsbmuxdProviderHandle *provider,
                                                                  struct SpringBoardServicesClientHandle **client);
 
-enum IdeviceErrorCode springboard_services_proxy_new(struct IdeviceHandle *socket,
+enum IdeviceErrorCode springboard_services_new(struct IdeviceHandle *socket,
                                                      struct SpringBoardServicesClientHandle **client);
 
 /**
@@ -2035,11 +2035,11 @@ enum IdeviceErrorCode springboard_services_proxy_new(struct IdeviceHandle *socke
  * `client` must be a valid pointer to a handle allocated by this library
  * `out_result` must be a valid, non-null pointer to a location where the result will be stored
  */
-enum IdeviceErrorCode springboard_services_proxy_get_icon(struct SpringBoardServicesClientHandle *client,
+enum IdeviceErrorCode springboard_services_get_icon(struct SpringBoardServicesClientHandle *client,
                                                           const char *bundle_identifier,
                                                           void **out_result,
                                                           size_t *out_result_len);
 
-void springboard_services_proxy_free(struct SpringBoardServicesClientHandle *handle);
+void springboard_services_free(struct SpringBoardServicesClientHandle *handle);
 
 #endif
