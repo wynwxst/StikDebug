@@ -426,7 +426,7 @@ struct SettingsView: View {
                     // Version info should now come after System Logs
                     HStack {
                         Spacer()
-                        Text("Version 1.0 • iOS \(UIDevice.current.systemVersion)")
+                        Text("Version 1.1 • iOS \(UIDevice.current.systemVersion)")
                             .font(.footnote)
                             .foregroundColor(.secondary.opacity(0.8))
                         Spacer()
