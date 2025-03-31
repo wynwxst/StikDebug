@@ -420,6 +420,8 @@ struct SettingsView: View {
                             }
                             .padding(.vertical, 12)
                             .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
