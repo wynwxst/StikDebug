@@ -271,7 +271,7 @@ struct HomeView: View {
         
         DispatchQueue.global(qos: .background).async {
 
-            JITEnableContext.shared().debugApp(withBundleID: bundleID,isLC: is_lc, logger: { message in
+            let success = JITEnableContext.shared.debugApp(withBundleID: bundleID,isLC: is_lc, logger: { message in
 
                 if let message = message {
                     // Log messages from the JIT process
