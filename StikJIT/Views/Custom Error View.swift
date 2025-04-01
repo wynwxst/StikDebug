@@ -112,7 +112,7 @@ struct CustomErrorView: View {
             .opacity(opacity)
         }
         .onAppear {
-            // Made animation faster (0.25s instead of 0.4s)
+
             withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
                 opacity = 1
                 scale = 1
@@ -121,13 +121,13 @@ struct CustomErrorView: View {
     }
     
     private func dismissWithAnimation() {
-        // Made dismiss animation faster (0.15s instead of 0.2s)
+
         withAnimation(.easeOut(duration: 0.15)) {
             opacity = 0
             scale = 0.8
         }
         
-        // Delay the actual dismissal to allow the animation to complete
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             onDismiss()
         }
