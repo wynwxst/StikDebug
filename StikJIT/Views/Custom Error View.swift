@@ -25,9 +25,9 @@ struct CustomErrorView: View {
                     }
                 }
             
-            // Error card - made more compact
+            // Card itself
             VStack(spacing: 12) {
-                // Error icon - smaller
+                // Error icon
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 32))
                     .foregroundColor(.red.opacity(0.9))
@@ -45,7 +45,7 @@ struct CustomErrorView: View {
                     .foregroundColor(.white.opacity(0.2))
                     .padding(.horizontal, 12)
                 
-                // Message - slightly smaller
+                // Message 
                 Text(message)
                     .font(.system(size: 15, design: .rounded))
                     .foregroundColor(.white.opacity(0.9))
@@ -53,15 +53,6 @@ struct CustomErrorView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 12)
                 
-                // Restart instructions when button is hidden
-                if !showButton {
-                    Text("Please connect to WireGuard VPN and restart the app.")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 4)
-                        .padding(.horizontal, 12)
-                }
                 
                 // Dismiss button (only shown when showButton is true)
                 if showButton {
