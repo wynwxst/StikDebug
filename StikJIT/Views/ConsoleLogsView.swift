@@ -229,7 +229,8 @@ struct ConsoleLogsView: View {
                             showingCustomAlert = false
                         },
                         showButton: true,
-                        primaryButtonText: "OK"
+                        primaryButtonText: "OK",
+                        messageType: isError ? .error : .success
                     )
                 }
             }

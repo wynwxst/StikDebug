@@ -12,6 +12,13 @@ struct CustomErrorView: View {
     var onPrimaryButtonTap: (() -> Void)? = nil
     var onSecondaryButtonTap: (() -> Void)? = nil
     var showSecondaryButton: Bool = false
+    var messageType: MessageType = .error
+    
+    enum MessageType {
+        case error
+        case success
+        case info
+    }
     
     var body: some View {
         ZStack {
@@ -27,11 +34,24 @@ struct CustomErrorView: View {
             
             // Card itself
             VStack(spacing: 12) {
-                // Error icon
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(.red.opacity(0.9))
-                    .padding(.top, 8)
+                // Icon based on messageType
+                switch messageType {
+                case .error:
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.red.opacity(0.9))
+                        .padding(.top, 8)
+                case .success:
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.green.opacity(0.9))
+                        .padding(.top, 8)
+                case .info:
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.blue.opacity(0.9))
+                        .padding(.top, 8)
+                }
                 
                 // Title - slightly smaller
                 Text(title)
