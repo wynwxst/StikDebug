@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Network
-import em_proxy
 import UniformTypeIdentifiers
 
 let fileManager = FileManager.default
