@@ -8,12 +8,13 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
-    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = Color.primaryBackground.toHex() ?? "#000000"
+    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = ""
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
     @State private var isShowingPairingFilePicker = false
+    @Environment(\.colorScheme) private var colorScheme
 
-    @State private var selectedBackgroundColor: Color = Color.primaryBackground
+    @State private var selectedBackgroundColor: Color = .clear
     @State private var showIconPopover = false
     @State private var showPairingFileMessage = false
     @State private var pairingFileIsValid = false
@@ -98,15 +99,59 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            ColorPicker("Background Color", selection: $selectedBackgroundColor)
-                                .onChange(of: selectedBackgroundColor) { newColor in
-                                    saveCustomBackgroundColor(newColor)
+                            // Theme selector with segmented control style
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Background Color")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                
+                                // Clean segmented style picker
+                                Picker("Theme Mode", selection: Binding(
+                                    get: { customBackgroundColorHex.isEmpty },
+                                    set: { newValue in
+                                        if newValue {
+                                            // System theme selected
+                                            customBackgroundColorHex = ""
+                                            selectedBackgroundColor = colorScheme == .dark ? Color.black : Color.white
+                                        } else if customBackgroundColorHex.isEmpty {
+                                            // Custom color selected - initialize with current theme color
+                                            let initialColor = colorScheme == .dark ? Color.black : Color.white
+                                            customBackgroundColorHex = initialColor.toHex() ?? "#000000"
+                                            selectedBackgroundColor = initialColor
+                                        }
+                                    }
+                                )) {
+                                    Text("System").tag(true)
+                                    Text("Custom").tag(false)
                                 }
-                                .foregroundColor(.primary)
-                                .padding(.vertical, 6)
+                                .pickerStyle(SegmentedPickerStyle())
+                                .padding(.vertical, 4)
+                                
+                                // Show color picker only in custom mode with a nice transition
+                                if !customBackgroundColorHex.isEmpty {
+                                    ColorPicker("", selection: $selectedBackgroundColor)
+                                        .onChange(of: selectedBackgroundColor) { newColor in
+                                            saveCustomBackgroundColor(newColor)
+                                        }
+                                        .labelsHidden()
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                        .padding(.top, 4)
+                                        .transition(.opacity)
+                                }
+                                
+                                // Help text
+                                Text(customBackgroundColorHex.isEmpty ? 
+                                    "Uses light/dark mode system colors" : 
+                                    "Select your preferred background color")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 4)
+                            }
+                            .padding(.vertical, 6)
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
+                        .animation(.easeInOut(duration: 0.2), value: customBackgroundColorHex.isEmpty)
                     }
                     
                     SettingsCard {
@@ -534,11 +579,16 @@ struct SettingsView: View {
     }
 
     private func loadCustomBackgroundColor() {
-        selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? Color.primaryBackground
+        if customBackgroundColorHex.isEmpty {
+            selectedBackgroundColor = colorScheme == .dark ? Color.black : Color.white
+        } else {
+            selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? (colorScheme == .dark ? Color.black : Color.white)
+        }
     }
 
     private func saveCustomBackgroundColor(_ color: Color) {
-        customBackgroundColorHex = color.toHex() ?? "#000000"
+        // Always save the custom color if we got here (since auto theme mode is disabled)
+        customBackgroundColorHex = color.toHex() ?? ""
     }
 
     private func changeAppIcon(to iconName: String) {
