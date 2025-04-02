@@ -50,7 +50,7 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
 
 func UpdateRetrieval() -> Bool{
 
-    let ver: String {
+    var ver: String {
          let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
          return marketingVersion
     }
