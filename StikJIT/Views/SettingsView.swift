@@ -29,8 +29,7 @@ struct SettingsView: View {
     
     private var appVersion: String {
         let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(marketingVersion) (\(buildNumber))"
+        return marketingVersion
     }
 
     // Developer profile image URLs 
