@@ -82,6 +82,11 @@ struct SettingsView: View {
                                 .padding(14)
                                 .background(Color(UIColor.tertiarySystemBackground))
                                 .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.03), radius: 1, x: 0, y: 1)
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 8)
