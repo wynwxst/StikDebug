@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var isImportingFile = false
     @State private var importProgress: Float = 0.0
     @State private var is_lc = false
+    @State private var showColorPickerPopup = false
     
     @StateObject private var mountProg = MountingProgress.shared
     
@@ -123,6 +124,9 @@ struct SettingsView: View {
                                             let initialColor = colorScheme == .dark ? Color.black : Color.white
                                             customBackgroundColorHex = initialColor.toHex() ?? "#000000"
                                             selectedBackgroundColor = initialColor
+                                            
+                                            // Don't open color picker popup automatically anymore
+                                            // User will need to press the "Change Color" button
                                         }
                                     }
                                 )) {
@@ -132,25 +136,35 @@ struct SettingsView: View {
                                 .pickerStyle(SegmentedPickerStyle())
                                 .padding(.vertical, 4)
                                 
-                                // Show color picker only in custom mode with a nice transition
+                                // Show selection button and color picker inline when in custom mode
                                 if !customBackgroundColorHex.isEmpty {
-                                    ColorPicker("", selection: $selectedBackgroundColor)
-                                        .onChange(of: selectedBackgroundColor) { newColor in
-                                            saveCustomBackgroundColor(newColor)
-                                        }
-                                        .labelsHidden()
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                        .padding(.top, 4)
-                                        .transition(.opacity)
+                                    HStack {
+                                        // Left side - just text, no color preview
+                                        Text("Choose color")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        
+                                        Spacer()
+                                        
+                                        // Right side - embedded color picker
+                                        ColorPicker("", selection: $selectedBackgroundColor, supportsOpacity: false)
+                                            .labelsHidden()
+                                            .scaleEffect(0.8)
+                                            .onChange(of: selectedBackgroundColor) { newColor in
+                                                saveCustomBackgroundColor(newColor)
+                                            }
+                                    }
+                                    .padding(.vertical, 8)
+                                    .transition(.opacity)
                                 }
                                 
-                                // Help text
-                                Text(customBackgroundColorHex.isEmpty ? 
-                                    "Uses light/dark mode system colors" : 
-                                    "Select your preferred background color")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .padding(.top, 4)
+                                // Help text - only show for system mode
+                                if customBackgroundColorHex.isEmpty {
+                                    Text("Uses light/dark mode system colors")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.top, 4)
+                                }
                             }
                             .padding(.vertical, 6)
                         }
