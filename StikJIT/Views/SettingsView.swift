@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = ""
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
+    @AppStorage("skipGetTaskAllowCheck") private var doSkipGetTaskAllowCheck = false
     @State private var isShowingPairingFilePicker = false
     @Environment(\.colorScheme) private var colorScheme
 
@@ -181,6 +182,9 @@ struct SettingsView: View {
                                 .padding(.bottom, 4)
                             
                             Toggle("Automatically Quit After Enabling JIT", isOn: $doAutoQuitAfterEnablingJIT)
+                                .foregroundColor(.primary)
+                                .padding(.vertical, 6)
+                            Toggle("Skip get-task-allow Check", isOn: $doSkipGetTaskAllowCheck)
                                 .foregroundColor(.primary)
                                 .padding(.vertical, 6)
                         }
