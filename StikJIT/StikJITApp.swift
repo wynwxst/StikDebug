@@ -507,6 +507,7 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 message: message,
                 onDismiss: {
                     // Called when tapped outside
+                    rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(false)
                 },
                 showButton: true,
@@ -529,12 +530,14 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 message: message,
                 onDismiss: {
                     // Called when tapped outside
+                    rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(true)
                 },
                 showButton: true,
                 primaryButtonText: "OK",
                 onPrimaryButtonTap: {
                     // OK was tapped
+                    rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(true)
                 }
             )
@@ -550,6 +553,7 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 title: title,
                 message: message,
                 onDismiss: {
+                    rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(false)
                 },
                 showButton: false
