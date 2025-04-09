@@ -15,6 +15,15 @@ struct CustomErrorView: View {
     var messageType: MessageType = .error
     
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
+    
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
     
     enum MessageType {
         case error
@@ -51,7 +60,7 @@ struct CustomErrorView: View {
                 case .info:
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(.blue.opacity(0.9))
+                        .foregroundColor(accentColor.opacity(0.9))
                         .padding(.top, 8)
                 }
                 
@@ -90,7 +99,7 @@ struct CustomErrorView: View {
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(colorScheme == .dark ? Color.white : Color.blue)
+                                        .fill(colorScheme == .dark ? Color.white : accentColor)
                                 )
                         }
                         
