@@ -211,12 +211,5 @@ func mountPersonalDDI(deviceIP: String = "10.7.0.1", imagePath: String, trustcac
         }
     }
     
-    if result != IdeviceSuccess {
-        print(result)
-        print("Failed to mount personalized image")
-        return 10 // EC: 10
-    } else {
-        print("Successfully mounted personalized image!")
-        return 0 // no EC
-    }
+    return Int(result.rawValue)
 }
