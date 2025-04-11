@@ -182,7 +182,7 @@ struct DisplayView: View {
                                 .foregroundColor(.primary)
                                 .tint(accentColor)
                             
-                            Text("Disabling this may reduce lag when enabling JIT")
+                            Text("Disabling this will hide app icons in the app list and may improve performance")
                                 .font(.footnote)
                                 .foregroundColor(Color(UIColor.secondaryLabel))
                         }
