@@ -23,6 +23,15 @@ struct ConsoleLogsView: View {
     @State private var alertTitle = ""
     @State private var isError = false
     
+    // Timer to check for log updates
+    @State private var logCheckTimer: Timer? = nil
+    
+    // Track if the view is active (visible)
+    @State private var isViewActive = false
+    @State private var lastProcessedLineCount = 0  // Track last processed line count
+    @State private var isLoadingLogs = false  // Track loading state
+    @State private var isAtBottom = true  // Track if user is at bottom of logs
+    
     private var accentColor: Color {
         if customAccentColorHex.isEmpty {
             return .blue
@@ -44,19 +53,31 @@ struct ConsoleLogsView: View {
                         ScrollView {
                             VStack(spacing: 0) {
                                 // Device Information
-                                ForEach(["Version: \(UIDevice.current.systemVersion)",
-                                         "Name: \(UIDevice.current.name)",
-                                         "Model: \(UIDevice.current.model)",
-                                         "StikJIT Version: App Version: 1.0"], id: \.self) { info in
-                                    Text("[\(timeString())] ℹ️ \(info)")
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("=== DEVICE INFORMATION ===")
                                         .font(.system(size: 11, design: .monospaced))
                                         .foregroundColor(colorScheme == .dark ? .white : .black)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.vertical, 2)
-                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 4)
+                                    
+                                    Text("iOS Version: \(UIDevice.current.systemVersion)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("Device: \(UIDevice.current.name)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("Model: \(UIDevice.current.model)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("=== LOG ENTRIES ===")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                        .padding(.vertical, 4)
                                 }
-                                
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
                                 
                                 // Log entries 
                                 ForEach(logManager.logs) { logEntry in
@@ -71,14 +92,42 @@ struct ConsoleLogsView: View {
                                         .id(logEntry.id)
                                 }
                             }
+                            .background(
+                                GeometryReader { geometry in
+                                    Color.clear.preference(
+                                        key: ScrollOffsetPreferenceKey.self,
+                                        value: geometry.frame(in: .named("scroll")).minY
+                                    )
+                                }
+                            )
+                        }
+                        .coordinateSpace(name: "scroll")
+                        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
+                            // Consider user is at bottom if they're within 20 points of the bottom
+                            // This gives a small buffer for slight scroll movements
+                            isAtBottom = offset > -20
+                        }
+                        .onChange(of: logManager.logs.count) { _ in
+                            if isAtBottom {
+                                withAnimation {
+                                    if let lastLog = logManager.logs.last {
+                                        proxy.scrollTo(lastLog.id, anchor: .bottom)
+                                    }
+                                }
+                            }
                         }
                         .onAppear {
                             scrollView = proxy
-                        }
-                        .onChange(of: logManager.logs.count) {
-                            if autoScroll, let lastLog = logManager.logs.last {
-                                proxy.scrollTo(lastLog.id, anchor: .bottom)
+                            isViewActive = true
+                            // Load logs asynchronously
+                            Task {
+                                await loadIdeviceLogsAsync()
                             }
+                            startLogCheckTimer()
+                        }
+                        .onDisappear {
+                            isViewActive = false
+                            stopLogCheckTimer()
                         }
                     }
                     
@@ -101,44 +150,27 @@ struct ConsoleLogsView: View {
                         // Action buttons with theme-appropriate background
                         VStack(spacing: 1) {
                             // Export button
-                            Button(action: {
-                                // Create logs content with device information
-                                var logsContent = "=== DEVICE INFORMATION ===\n"
-                                logsContent += "Version: \(UIDevice.current.systemVersion)\n"
-                                logsContent += "Name: \(UIDevice.current.name)\n" 
-                                logsContent += "Model: \(UIDevice.current.model)\n"
-                                logsContent += "StikJIT Version: App Version: 1.0\n\n"
-                                logsContent += "=== LOG ENTRIES ===\n"
-                                
-                                // Add all log entries with proper formatting
-                                logsContent += logManager.logs.map { 
-                                    "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" 
-                                }.joined(separator: "\n")
-                                
-                                // Save to document directory (accessible in Files app)
-                                let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                                let dateFormatter = DateFormatter()
-                                dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-                                let timestamp = dateFormatter.string(from: Date())
-                                let fileURL = documentsDirectory.appendingPathComponent("StikJIT_Logs_\(timestamp).txt")
-                                
-                                do {
-                                    // Write the logs to the file
-                                    try logsContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                            ShareLink(
+                                item: {
+                                    // Get the path to the idevice log file
+                                    let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt")
                                     
-                                    // Set alert variables and show the alert
-                                    alertTitle = "Logs Exported"
-                                    alertMessage = "Logs have been saved to Files app in StikJIT folder."
-                                    isError = false
-                                    showingCustomAlert = true
-                                } catch {
-                                    // Set error alert variables and show the alert
-                                    alertTitle = "Export Failed"
-                                    alertMessage = "Failed to save logs: \(error.localizedDescription)"
-                                    isError = true
-                                    showingCustomAlert = true
-                                }
-                            }) {
+                                    // Check if the file exists
+                                    guard FileManager.default.fileExists(atPath: logPath.path) else {
+                                        alertTitle = "Export Failed"
+                                        alertMessage = "No idevice logs found"
+                                        isError = true
+                                        showingCustomAlert = true
+                                        return URL.documentsDirectory.appendingPathComponent("empty.txt")
+                                    }
+                                    
+                                    return logPath
+                                }(),
+                                preview: SharePreview(
+                                    "idevice_log.txt",
+                                    image: Image(systemName: "doc.text")
+                                )
+                            ) {
                                 HStack {
                                     Text("Export Logs")
                                         .foregroundColor(accentColor)
@@ -224,11 +256,23 @@ struct ConsoleLogsView: View {
                     }
                     
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            logManager.clearLogs()
-                        }) {
-                            Text("Clear")
-                                .foregroundColor(accentColor)
+                        HStack {
+                            Button(action: {
+                                // Load the logs again
+                                Task {
+                                    await loadIdeviceLogsAsync()
+                                }
+                            }) {
+                                Image(systemName: "arrow.clockwise")
+                                    .foregroundColor(accentColor)
+                            }
+                            
+                            Button(action: {
+                                logManager.clearLogs()
+                            }) {
+                                Text("Clear")
+                                    .foregroundColor(accentColor)
+                            }
                         }
                     }
                 }
@@ -313,10 +357,156 @@ struct ConsoleLogsView: View {
             return .orange
         }
     }
+    
+    // Function to load idevice logs from file asynchronously
+    private func loadIdeviceLogsAsync() async {
+        guard !isLoadingLogs else { return }
+        isLoadingLogs = true
+        
+        // Get the path to the idevice log file
+        let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt").path
+        
+        // Check if the file exists
+        guard FileManager.default.fileExists(atPath: logPath) else {
+            await MainActor.run {
+                logManager.addInfoLog("No idevice logs found (Restart the app to continue reading)")
+                isLoadingLogs = false
+            }
+            return
+        }
+        
+        do {
+            // Read the file content
+            let logContent = try String(contentsOfFile: logPath, encoding: .utf8)
+            let lines = logContent.components(separatedBy: .newlines)
+            
+            // Only take the last 500 lines
+            let maxLines = 500
+            let startIndex = max(0, lines.count - maxLines)
+            let recentLines = Array(lines[startIndex..<lines.count])
+            
+            // Update the last processed line count
+            lastProcessedLineCount = lines.count
+            
+            await MainActor.run {
+                // Clear existing logs
+                logManager.clearLogs()
+                
+                // Process recent lines
+                for line in recentLines {
+                    if line.isEmpty { continue }
+                    
+                    // Skip device information lines that we already show in the header
+                    if line.contains("=== DEVICE INFORMATION ===") ||
+                       line.contains("Version:") ||
+                       line.contains("Name:") ||
+                       line.contains("Model:") ||
+                       line.contains("=== LOG ENTRIES ===") {
+                        continue
+                    }
+                    
+                    if line.contains("ERROR") || line.contains("Error") {
+                        logManager.addErrorLog(line)
+                    } else if line.contains("WARNING") || line.contains("Warning") {
+                        logManager.addWarningLog(line)
+                    } else if line.contains("DEBUG") {
+                        logManager.addDebugLog(line)
+                    } else {
+                        logManager.addInfoLog(line)
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                logManager.addErrorLog("Failed to read idevice logs: \(error.localizedDescription)")
+            }
+        }
+        
+        await MainActor.run {
+            isLoadingLogs = false
+        }
+    }
+    
+    // Update the timer function to use async loading
+    private func startLogCheckTimer() {
+        logCheckTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            if isViewActive {
+                Task {
+                    await checkForNewLogs()
+                }
+            }
+        }
+    }
+    
+    // Function to check for new logs
+    private func checkForNewLogs() async {
+        guard !isLoadingLogs else { return }
+        isLoadingLogs = true
+        
+        let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt").path
+        
+        guard FileManager.default.fileExists(atPath: logPath) else {
+            isLoadingLogs = false
+            return
+        }
+        
+        do {
+            let logContent = try String(contentsOfFile: logPath, encoding: .utf8)
+            let lines = logContent.components(separatedBy: .newlines)
+            
+            // Only process new lines
+            if lines.count > lastProcessedLineCount {
+                let newLines = Array(lines[lastProcessedLineCount..<lines.count])
+                lastProcessedLineCount = lines.count
+                
+                await MainActor.run {
+                    for line in newLines {
+                        if line.isEmpty { continue }
+                        
+                        if line.contains("ERROR") || line.contains("Error") {
+                            logManager.addErrorLog(line)
+                        } else if line.contains("WARNING") || line.contains("Warning") {
+                            logManager.addWarningLog(line)
+                        } else if line.contains("DEBUG") {
+                            logManager.addDebugLog(line)
+                        } else {
+                            logManager.addInfoLog(line)
+                        }
+                    }
+                    
+                    // Keep only the last 300 lines
+                    let maxLines = 500
+                    if logManager.logs.count > maxLines {
+                        let excessCount = logManager.logs.count - maxLines
+                        logManager.removeOldestLogs(count: excessCount)
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                logManager.addErrorLog("Failed to read new logs: \(error.localizedDescription)")
+            }
+        }
+        
+        isLoadingLogs = false
+    }
+    
+    // Function to stop the timer
+    private func stopLogCheckTimer() {
+        logCheckTimer?.invalidate()
+        logCheckTimer = nil
+    }
 }
 
 struct ConsoleLogsView_Previews: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
+    }
+}
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 } 
