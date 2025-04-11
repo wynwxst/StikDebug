@@ -30,6 +30,7 @@ struct ConsoleLogsView: View {
     @State private var isViewActive = false
     @State private var lastProcessedLineCount = 0  // Track last processed line count
     @State private var isLoadingLogs = false  // Track loading state
+    @State private var isAtBottom = true  // Track if user is at bottom of logs
     
     private var accentColor: Color {
         if customAccentColorHex.isEmpty {
@@ -52,19 +53,31 @@ struct ConsoleLogsView: View {
                         ScrollView {
                             VStack(spacing: 0) {
                                 // Device Information
-                                ForEach(["Version: \(UIDevice.current.systemVersion)",
-                                         "Name: \(UIDevice.current.name)",
-                                         "Model: \(UIDevice.current.model)",
-                                         "StikJIT Version: App Version: 1.0"], id: \.self) { info in
-                                    Text("[\(timeString())] ℹ️ \(info)")
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("=== DEVICE INFORMATION ===")
                                         .font(.system(size: 11, design: .monospaced))
                                         .foregroundColor(colorScheme == .dark ? .white : .black)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.vertical, 2)
-                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 4)
+                                    
+                                    Text("iOS Version: \(UIDevice.current.systemVersion)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("Device: \(UIDevice.current.name)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("Model: \(UIDevice.current.model)")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    
+                                    Text("=== LOG ENTRIES ===")
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                                        .padding(.vertical, 4)
                                 }
-                                
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
                                 
                                 // Log entries 
                                 ForEach(logManager.logs) { logEntry in
@@ -77,6 +90,29 @@ struct ConsoleLogsView: View {
                                         .padding(.vertical, 1)
                                         .padding(.horizontal, 4)
                                         .id(logEntry.id)
+                                }
+                            }
+                            .background(
+                                GeometryReader { geometry in
+                                    Color.clear.preference(
+                                        key: ScrollOffsetPreferenceKey.self,
+                                        value: geometry.frame(in: .named("scroll")).maxY
+                                    )
+                                }
+                            )
+                        }
+                        .coordinateSpace(name: "scroll")
+                        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
+                            let threshold: CGFloat = 50
+                            let scrollViewHeight = UIScreen.main.bounds.height
+                            isAtBottom = offset < (scrollViewHeight + threshold)
+                        }
+                        .onChange(of: logManager.logs.count) { _ in
+                            if isAtBottom {
+                                withAnimation {
+                                    if let lastLog = logManager.logs.last {
+                                        proxy.scrollTo(lastLog.id, anchor: .bottom)
+                                    }
                                 }
                             }
                         }
@@ -92,11 +128,6 @@ struct ConsoleLogsView: View {
                         .onDisappear {
                             isViewActive = false
                             stopLogCheckTimer()
-                        }
-                        .onChange(of: logManager.logs.count) {
-                            if autoScroll, let lastLog = logManager.logs.last {
-                                proxy.scrollTo(lastLog.id, anchor: .bottom)
-                            }
                         }
                     }
                     
@@ -366,8 +397,8 @@ struct ConsoleLogsView: View {
             let logContent = try String(contentsOfFile: logPath, encoding: .utf8)
             let lines = logContent.components(separatedBy: .newlines)
             
-            // Only take the last 300 lines
-            let maxLines = 300
+            // Only take the last 500 lines
+            let maxLines = 500
             let startIndex = max(0, lines.count - maxLines)
             let recentLines = Array(lines[startIndex..<lines.count])
             
@@ -378,17 +409,18 @@ struct ConsoleLogsView: View {
                 // Clear existing logs
                 logManager.clearLogs()
                 
-                // Add device info
-                logManager.addInfoLog("=== DEVICE INFORMATION ===")
-                logManager.addInfoLog("Version: \(UIDevice.current.systemVersion)")
-                logManager.addInfoLog("Name: \(UIDevice.current.name)")
-                logManager.addInfoLog("Model: \(UIDevice.current.model)")
-                logManager.addInfoLog("StikJIT Version: App Version: 1.0")
-                logManager.addInfoLog("=== LOG ENTRIES ===")
-                
                 // Process recent lines
                 for line in recentLines {
                     if line.isEmpty { continue }
+                    
+                    // Skip device information lines that we already show in the header
+                    if line.contains("=== DEVICE INFORMATION ===") ||
+                       line.contains("Version:") ||
+                       line.contains("Name:") ||
+                       line.contains("Model:") ||
+                       line.contains("=== LOG ENTRIES ===") {
+                        continue
+                    }
                     
                     if line.contains("ERROR") || line.contains("Error") {
                         logManager.addErrorLog(line)
@@ -460,7 +492,7 @@ struct ConsoleLogsView: View {
                     }
                     
                     // Keep only the last 300 lines
-                    let maxLines = 300
+                    let maxLines = 500
                     if logManager.logs.count > maxLines {
                         let excessCount = logManager.logs.count - maxLines
                         logManager.removeOldestLogs(count: excessCount)
@@ -486,5 +518,12 @@ struct ConsoleLogsView: View {
 struct ConsoleLogsView_Previews: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
+    }
+}
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 } 
