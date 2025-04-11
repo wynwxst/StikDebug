@@ -96,21 +96,22 @@ struct ConsoleLogsView: View {
                                 GeometryReader { geometry in
                                     Color.clear.preference(
                                         key: ScrollOffsetPreferenceKey.self,
-                                        value: geometry.frame(in: .named("scroll")).maxY
+                                        value: geometry.frame(in: .named("scroll")).minY
                                     )
                                 }
                             )
                         }
                         .coordinateSpace(name: "scroll")
                         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-                            let threshold: CGFloat = 50
-                            let scrollViewHeight = UIScreen.main.bounds.height
-                            isAtBottom = offset < (scrollViewHeight + threshold)
+                            // Consider user is at bottom if they're within 20 points of the bottom
+                            // This gives a small buffer for slight scroll movements
+                            isAtBottom = offset > -20
                         }
-                        .onChange(of: logManager.logs.count) { _ in
+                        .onChange(of: logManager.logs) { newLogs in
+                            // Only auto-scroll if we're already at the bottom
                             if isAtBottom {
                                 withAnimation {
-                                    if let lastLog = logManager.logs.last {
+                                    if let lastLog = newLogs.last {
                                         proxy.scrollTo(lastLog.id, anchor: .bottom)
                                     }
                                 }
