@@ -23,6 +23,7 @@ struct SettingsView: View {
     @State private var importProgress: Float = 0.0
     @State private var is_lc = false
     @State private var showColorPickerPopup = false
+    @State private var showingAppIconSheet = false
     
     @StateObject private var mountProg = MountingProgress.shared
     
@@ -123,7 +124,7 @@ struct SettingsView: View {
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 Button(action: {
-                                    // App Icon button - placeholder for now
+                                    showingAppIconSheet = true
                                 }) {
                                     HStack {
                                         Image(systemName: "app")
@@ -149,6 +150,9 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
+                    }
+                    .sheet(isPresented: $showingAppIconSheet) {
+                        AppIconView()
                     }
                     
                     SettingsCard {
