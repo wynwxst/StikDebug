@@ -77,114 +77,120 @@ struct DisplayView: View {
     
     var body: some View {
         ZStack {
-            Color(colorScheme == .dark ? .black : .white)
+            Color(colorScheme == .dark ? .black : UIColor.systemBackground)
                 .ignoresSafeArea()
                 
             ScrollView {
                 VStack(spacing: 16) {
                     // App Theme Section with Accent Colors
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Theme")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 4)
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Theme")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                            .padding(.bottom, 4)
+                        
+                        // Theme selector with preview images
+                        HStack(spacing: 12) {
+                            // Automatic Theme
+                            ThemeOptionButton(
+                                title: "Automatic",
+                                imageName: "System",
+                                isSelected: appTheme == "system",
+                                accentColor: selectedAccentColor,
+                                action: { appTheme = "system" }
+                            )
                             
-                            // Theme selector with preview images
-                            HStack(spacing: 12) {
-                                // Automatic Theme
-                                ThemeOptionButton(
-                                    title: "Automatic",
-                                    imageName: "System",
-                                    isSelected: appTheme == "system",
-                                    accentColor: selectedAccentColor,
-                                    action: { appTheme = "system" }
-                                )
-                                
-                                // Light Theme
-                                ThemeOptionButton(
-                                    title: "Light",
-                                    imageName: "LightUI",
-                                    isSelected: appTheme == "light",
-                                    accentColor: selectedAccentColor,
-                                    action: { appTheme = "light" }
-                                )
-                                
-                                // Dark Theme
-                                ThemeOptionButton(
-                                    title: "Dark",
-                                    imageName: "DarkUI",
-                                    isSelected: appTheme == "dark",
-                                    accentColor: selectedAccentColor,
-                                    action: { appTheme = "dark" }
-                                )
-                            }
-                            .onChange(of: appTheme) { newValue in
-                                applyTheme(newValue)
-                            }
+                            // Light Theme
+                            ThemeOptionButton(
+                                title: "Light",
+                                imageName: "LightUI",
+                                isSelected: appTheme == "light",
+                                accentColor: selectedAccentColor,
+                                action: { appTheme = "light" }
+                            )
                             
-                            Divider()
-                                .padding(.vertical, 4)
-                            
-                            // Accent Color Picker
-                            AccentColorPicker(selectedColor: Binding(
-                                get: { selectedAccentColor },
-                                set: { newColor in
-                                    selectedAccentColor = newColor
-                                    saveCustomAccentColor(newColor)
-                                }
-                            ))
+                            // Dark Theme
+                            ThemeOptionButton(
+                                title: "Dark",
+                                imageName: "DarkUI",
+                                isSelected: appTheme == "dark",
+                                accentColor: selectedAccentColor,
+                                action: { appTheme = "dark" }
+                            )
                         }
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 16)
+                        .onChange(of: appTheme) { newValue in
+                            applyTheme(newValue)
+                        }
+                        
+                        Divider()
+                            .padding(.vertical, 4)
+                        
+                        // Accent Color Picker
+                        AccentColorPicker(selectedColor: Binding(
+                            get: { selectedAccentColor },
+                            set: { newColor in
+                                selectedAccentColor = newColor
+                                saveCustomAccentColor(newColor)
+                            }
+                        ))
                     }
-                    .background(Color(UIColor.tertiarySystemBackground))
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .background(Color(UIColor.systemGray6))
                     .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
                     
                     // Username Section
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Username")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 4)
-                            
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Username")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        HStack {
                             TextField("Username", text: $username)
-                                .padding(14)
-                                .background(Color(UIColor.tertiarySystemBackground))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                                .shadow(color: Color.black.opacity(0.03), radius: 1, x: 0, y: 1)
-                        }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 16)
-                    }
-                    .background(Color(UIColor.tertiarySystemBackground))
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
-                    
-                    // App Icons on JIT Toggle Section
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("JIT Options")
-                                .font(.headline)
+                                .font(.body)
                                 .foregroundColor(.primary)
-                                .padding(.bottom, 4)
+                                .padding(.vertical, 8)
                             
+                            if !username.isEmpty {
+                                Button(action: { username = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(Color(UIColor.tertiaryLabel))
+                                        .font(.system(size: 16))
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .background(Color(UIColor.tertiarySystemFill))
+                        .cornerRadius(8)
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .background(Color(UIColor.systemGray6))
+                    .cornerRadius(16)
+                    
+                    // JIT Options Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("JIT Options")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
                             Toggle("Load App Icons when Enabling JIT", isOn: $loadAppIconsOnJIT)
                                 .foregroundColor(.primary)
-                                .padding(.vertical, 6)
+                                .tint(accentColor)
+                            
+                            Text("Disabling this may reduce lag when enabling JIT")
+                                .font(.footnote)
+                                .foregroundColor(Color(UIColor.secondaryLabel))
                         }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 16)
                     }
-                    .background(Color(UIColor.tertiarySystemBackground))
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .background(Color(UIColor.systemGray6))
                     .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
