@@ -107,11 +107,10 @@ struct ConsoleLogsView: View {
                             // This gives a small buffer for slight scroll movements
                             isAtBottom = offset > -20
                         }
-                        .onChange(of: logManager.logs) { newLogs in
-                            // Only auto-scroll if we're already at the bottom
+                        .onChange(of: logManager.logs.count) { _ in
                             if isAtBottom {
                                 withAnimation {
-                                    if let lastLog = newLogs.last {
+                                    if let lastLog = logManager.logs.last {
                                         proxy.scrollTo(lastLog.id, anchor: .bottom)
                                     }
                                 }
