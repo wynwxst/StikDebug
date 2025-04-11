@@ -15,8 +15,8 @@ struct AccentColorPicker: View {
         .red,   // Red
         .init(hex: "#6A5ACD")!, // Purple
         .init(hex: "#DA70D6")!, // Pink
-        .init(hex: "#DB7093")!, // Rose
-        .init(hex: "#8B4513")!, // Brown
+        .white, // white
+        .black // black
     ]
     
     var body: some View {
@@ -77,7 +77,7 @@ struct DisplayView: View {
     
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground)
+            Color(colorScheme == .dark ? .black : .white)
                 .ignoresSafeArea()
                 
             ScrollView {
@@ -138,6 +138,9 @@ struct DisplayView: View {
                         .padding(.vertical, 16)
                         .padding(.horizontal, 16)
                     }
+                    .background(Color(UIColor.tertiarySystemBackground))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
                     
                     // Username Section
                     SettingsCard {
@@ -160,6 +163,9 @@ struct DisplayView: View {
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
+                    .background(Color(UIColor.tertiarySystemBackground))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
                     
                     // App Icons on JIT Toggle Section
                     SettingsCard {
@@ -176,6 +182,9 @@ struct DisplayView: View {
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
                     }
+                    .background(Color(UIColor.tertiarySystemBackground))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 2)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
