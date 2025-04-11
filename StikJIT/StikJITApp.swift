@@ -91,6 +91,7 @@ struct HeartbeatApp: App {
     @State private var alert_string = ""
     @State private var alert_title = ""
     @StateObject private var mount = MountingProgress.shared
+    @AppStorage("appTheme") private var appTheme: String = "system"
     
     let urls: [String] = [
         "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/BuildManifest.plist",
@@ -111,6 +112,19 @@ struct HeartbeatApp: App {
         let fixMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.fix_init(forOpeningContentTypes:asCopy:)))!
         let origMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.init(forOpeningContentTypes:asCopy:)))!
         method_exchangeImplementations(origMethod, fixMethod)
+        
+        // Apply theme immediately when app launches
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            switch appTheme {
+            case "dark":
+                window.overrideUserInterfaceStyle = .dark
+            case "light":
+                window.overrideUserInterfaceStyle = .light
+            default:
+                window.overrideUserInterfaceStyle = .unspecified
+            }
+        }
     }
     func newVerCheck() {
         let currentDate = Calendar.current.startOfDay(for: Date())
@@ -135,6 +149,19 @@ struct HeartbeatApp: App {
 
 
             UserDefaults.standard.set(currentDate, forKey: "VersionUpdateAlert")
+        }
+    }
+    private func applyTheme() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            switch appTheme {
+            case "dark":
+                window.overrideUserInterfaceStyle = .dark
+            case "light":
+                window.overrideUserInterfaceStyle = .light
+            default:
+                window.overrideUserInterfaceStyle = .unspecified
+            }
         }
     }
     var body: some Scene {
@@ -213,6 +240,7 @@ struct HeartbeatApp: App {
             } else {
                 MainTabView()
                     .onAppear() {
+                        applyTheme()
                         let fileManager = FileManager.default
                         for (index, urlString) in urls.enumerated() {
                             let destinationURL = URL.documentsDirectory.appendingPathComponent(outputFiles[index])
@@ -455,6 +483,7 @@ struct LoadingView: View {
     @State private var animate = false
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
+    @AppStorage("appTheme") private var appTheme: String = "system"
     
     private var accentColor: Color {
         if customAccentColorHex.isEmpty {
@@ -464,10 +493,21 @@ struct LoadingView: View {
         }
     }
     
+    private var isDarkMode: Bool {
+        switch appTheme {
+        case "dark":
+            return true
+        case "light":
+            return false
+        default:
+            return colorScheme == .dark
+        }
+    }
+    
     var body: some View {
         ZStack {
-            // Use system background color instead of fixed black
-            Color(colorScheme == .dark ? .black : .white)
+            // Use theme-aware background color
+            Color(isDarkMode ? .black : .white)
                 .ignoresSafeArea()
             
             VStack {
@@ -475,7 +515,7 @@ struct LoadingView: View {
                     // Background circle - slightly visible in both themes
                     Circle()
                         .stroke(lineWidth: 8)
-                        .foregroundColor(colorScheme == .dark ? 
+                        .foregroundColor(isDarkMode ? 
                             Color.white.opacity(0.3) : 
                             Color.black.opacity(0.1))
                         .frame(width: 80, height: 80)
@@ -504,7 +544,7 @@ struct LoadingView: View {
                 // Text adapts to theme
                 Text("Loading...")
                     .font(.system(size: 20, weight: .medium, design: .rounded))
-                    .foregroundColor(colorScheme == .dark ? 
+                    .foregroundColor(isDarkMode ? 
                         .white.opacity(0.8) : 
                         .black.opacity(0.8))
                     .padding(.top, 20)
