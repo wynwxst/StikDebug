@@ -172,7 +172,7 @@ struct DisplayView: View {
                     
                     // JIT Options Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("JIT Options")
+                        Text("App List")
                             .font(.title3)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -180,9 +180,9 @@ struct DisplayView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Toggle("Load App Icons when Enabling JIT", isOn: $loadAppIconsOnJIT)
                                 .foregroundColor(.primary)
-                                .tint(accentColor)
+                                .tint(.green)
                             
-                            Text("Disabling this will hide app icons in the app list and may improve performance")
+                            Text("Disabling this will hide app icons in the app list and may improve performance, while also giving it a more aesthetic look.")
                                 .font(.footnote)
                                 .foregroundColor(Color(UIColor.secondaryLabel))
                         }
