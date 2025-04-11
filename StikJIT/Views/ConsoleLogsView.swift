@@ -150,44 +150,27 @@ struct ConsoleLogsView: View {
                         // Action buttons with theme-appropriate background
                         VStack(spacing: 1) {
                             // Export button
-                            Button(action: {
-                                // Create logs content with device information
-                                var logsContent = "=== DEVICE INFORMATION ===\n"
-                                logsContent += "Version: \(UIDevice.current.systemVersion)\n"
-                                logsContent += "Name: \(UIDevice.current.name)\n" 
-                                logsContent += "Model: \(UIDevice.current.model)\n"
-                                logsContent += "StikJIT Version: App Version: 1.0\n\n"
-                                logsContent += "=== LOG ENTRIES ===\n"
-                                
-                                // Add all log entries with proper formatting
-                                logsContent += logManager.logs.map { 
-                                    "[\(formatTime(date: $0.timestamp))] [\($0.type.rawValue)] \($0.message)" 
-                                }.joined(separator: "\n")
-                                
-                                // Save to document directory (accessible in Files app)
-                                let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                                let dateFormatter = DateFormatter()
-                                dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-                                let timestamp = dateFormatter.string(from: Date())
-                                let fileURL = documentsDirectory.appendingPathComponent("StikJIT_Logs_\(timestamp).txt")
-                                
-                                do {
-                                    // Write the logs to the file
-                                    try logsContent.write(to: fileURL, atomically: true, encoding: .utf8)
+                            ShareLink(
+                                item: {
+                                    // Get the path to the idevice log file
+                                    let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt")
                                     
-                                    // Set alert variables and show the alert
-                                    alertTitle = "Logs Exported"
-                                    alertMessage = "Logs have been saved to Files app in StikJIT folder."
-                                    isError = false
-                                    showingCustomAlert = true
-                                } catch {
-                                    // Set error alert variables and show the alert
-                                    alertTitle = "Export Failed"
-                                    alertMessage = "Failed to save logs: \(error.localizedDescription)"
-                                    isError = true
-                                    showingCustomAlert = true
-                                }
-                            }) {
+                                    // Check if the file exists
+                                    guard FileManager.default.fileExists(atPath: logPath.path) else {
+                                        alertTitle = "Export Failed"
+                                        alertMessage = "No idevice logs found"
+                                        isError = true
+                                        showingCustomAlert = true
+                                        return URL.documentsDirectory.appendingPathComponent("empty.txt")
+                                    }
+                                    
+                                    return logPath
+                                }(),
+                                preview: SharePreview(
+                                    "StikJIT Logs",
+                                    image: Image(systemName: "doc.text")
+                                )
+                            ) {
                                 HStack {
                                     Text("Export Logs")
                                         .foregroundColor(accentColor)
