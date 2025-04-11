@@ -8,14 +8,14 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
-    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = ""
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
     @AppStorage("skipGetTaskAllowCheck") private var doSkipGetTaskAllowCheck = false
     @State private var isShowingPairingFilePicker = false
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var selectedBackgroundColor: Color = .clear
+    @State private var selectedAccentColor: Color = .blue
     @State private var showIconPopover = false
     @State private var showPairingFileMessage = false
     @State private var pairingFileIsValid = false
@@ -45,6 +45,14 @@ struct SettingsView: View {
         "Huge_Black": "https://github.com/HugeBlack.png",
         "Wynwxst": "https://github.com/Wynwxst.png"
     ]
+
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -108,37 +116,33 @@ struct SettingsView: View {
                             
                             // Theme selector with segmented control style
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("Background Color")
+                                Text("Accent Color")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 
                                 // Clean segmented style picker
                                 Picker("Theme Mode", selection: Binding(
-                                    get: { customBackgroundColorHex.isEmpty },
+                                    get: { customAccentColorHex.isEmpty },
                                     set: { newValue in
                                         if newValue {
-                                            // System theme selected
-                                            customBackgroundColorHex = ""
-                                            selectedBackgroundColor = colorScheme == .dark ? Color.black : Color.white
-                                        } else if customBackgroundColorHex.isEmpty {
+                                            // System accent color selected
+                                            customAccentColorHex = ""
+                                            selectedAccentColor = .blue
+                                        } else if customAccentColorHex.isEmpty {
                                             // Custom color selected - initialize with current theme color
-                                            let initialColor = colorScheme == .dark ? Color.black : Color.white
-                                            customBackgroundColorHex = initialColor.toHex() ?? "#000000"
-                                            selectedBackgroundColor = initialColor
-                                            
-                                            // Don't open color picker popup automatically anymore
-                                            // User will need to press the "Change Color" button
+                                            selectedAccentColor = .blue
+                                            customAccentColorHex = selectedAccentColor.toHex() ?? "#0000FF"
                                         }
                                     }
                                 )) {
-                                    Text("System").tag(true)
+                                    Text("Default").tag(true)
                                     Text("Custom").tag(false)
                                 }
                                 .pickerStyle(SegmentedPickerStyle())
                                 .padding(.vertical, 4)
                                 
                                 // Show selection button and color picker inline when in custom mode
-                                if !customBackgroundColorHex.isEmpty {
+                                if !customAccentColorHex.isEmpty {
                                     HStack {
                                         // Left side - just text, no color preview
                                         Text("Choose color")
@@ -148,11 +152,11 @@ struct SettingsView: View {
                                         Spacer()
                                         
                                         // Right side - embedded color picker
-                                        ColorPicker("", selection: $selectedBackgroundColor, supportsOpacity: false)
+                                        ColorPicker("", selection: $selectedAccentColor, supportsOpacity: false)
                                             .labelsHidden()
                                             .scaleEffect(0.8)
-                                            .onChange(of: selectedBackgroundColor) { newColor in
-                                                saveCustomBackgroundColor(newColor)
+                                            .onChange(of: selectedAccentColor) { newColor in
+                                                saveCustomAccentColor(newColor)
                                             }
                                     }
                                     .padding(.vertical, 8)
@@ -160,8 +164,8 @@ struct SettingsView: View {
                                 }
                                 
                                 // Help text - only show for system mode
-                                if customBackgroundColorHex.isEmpty {
-                                    Text("Uses light/dark mode system colors")
+                                if customAccentColorHex.isEmpty {
+                                    Text("Uses default blue accent color")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                         .padding(.top, 4)
@@ -171,7 +175,7 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
-                        .animation(.easeInOut(duration: 0.2), value: customBackgroundColorHex.isEmpty)
+                        .animation(.easeInOut(duration: 0.2), value: customAccentColorHex.isEmpty)
                     }
                     
                     SettingsCard {
@@ -211,8 +215,8 @@ struct SettingsView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .foregroundColor(.white)
-                                .background(Color.blue)
+                                .foregroundColor(accentColor.contrastText())
+                                .background(accentColor)
                                 .cornerRadius(12)
                             }
                             
@@ -464,7 +468,7 @@ struct SettingsView: View {
                                         Spacer()
                                         Image(systemName: "gamecontroller")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(accentColor)
                                             .frame(width: 24) // Keep consistent with LinkRow
                                     }
                                 }
@@ -484,7 +488,7 @@ struct SettingsView: View {
                             HStack {
                                 Image(systemName: "terminal")
                                     .font(.system(size: 18))
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(accentColor)
                                 Text("System Logs")
                                     .fontWeight(.medium)
                                     .foregroundColor(.primary)
@@ -597,21 +601,21 @@ struct SettingsView: View {
             }
         }
         .onAppear {
-            loadCustomBackgroundColor()
+            loadCustomAccentColor()
         }
     }
 
-    private func loadCustomBackgroundColor() {
-        if customBackgroundColorHex.isEmpty {
-            selectedBackgroundColor = colorScheme == .dark ? Color.black : Color.white
+    private func loadCustomAccentColor() {
+        if customAccentColorHex.isEmpty {
+            selectedAccentColor = .blue
         } else {
-            selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? (colorScheme == .dark ? Color.black : Color.white)
+            selectedAccentColor = Color(hex: customAccentColorHex) ?? .blue
         }
     }
 
-    private func saveCustomBackgroundColor(_ color: Color) {
+    private func saveCustomAccentColor(_ color: Color) {
         // Always save the custom color if we got here (since auto theme mode is disabled)
-        customBackgroundColorHex = color.toHex() ?? ""
+        customAccentColorHex = color.toHex() ?? ""
     }
 
     private func changeAppIcon(to iconName: String) {
@@ -682,6 +686,15 @@ struct LinkRow: View {
     var icon: String
     var title: String
     var url: String
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
+    
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
     
     var body: some View {
         Button(action: {
@@ -695,7 +708,7 @@ struct LinkRow: View {
                 Spacer()
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundColor(.blue)
+                    .foregroundColor(accentColor)
                     .frame(width: 24) // Added fixed width
             }
         }
@@ -781,6 +794,15 @@ struct CollaboratorRow: View {
     var name: String
     var url: String
     var imageUrl: String
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
+    
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
     
     var body: some View {
         Button(action: {
@@ -800,7 +822,7 @@ struct CollaboratorRow: View {
                 
                 Image(systemName: "link")
                     .font(.system(size: 16))
-                    .foregroundColor(.blue)
+                    .foregroundColor(accentColor)
             }
             .padding(.vertical, 8)
         }

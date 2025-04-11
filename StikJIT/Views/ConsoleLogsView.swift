@@ -11,15 +11,25 @@ import UIKit
 struct ConsoleLogsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accentColor) private var environmentAccentColor
     @StateObject private var logManager = LogManager.shared
     @State private var autoScroll = true
     @State private var scrollView: ScrollViewProxy? = nil
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
     
     // Alert handling
     @State private var showingCustomAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
     @State private var isError = false
+    
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -131,10 +141,10 @@ struct ConsoleLogsView: View {
                             }) {
                                 HStack {
                                     Text("Export Logs")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(accentColor)
                                     Spacer()
                                     Image(systemName: "square.and.arrow.down")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(accentColor)
                                 }
                                 .padding(.vertical, 14)
                                 .padding(.horizontal, 20)
@@ -172,10 +182,10 @@ struct ConsoleLogsView: View {
                             }) {
                                 HStack {
                                     Text("Copy Logs")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(accentColor)
                                     Spacer()
                                     Image(systemName: "doc.on.doc")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(accentColor)
                                 }
                                 .padding(.vertical, 14)
                                 .padding(.horizontal, 20)
@@ -209,7 +219,7 @@ struct ConsoleLogsView: View {
                                 Text("Settings")
                                     .fontWeight(.regular)
                             }
-                            .foregroundColor(.blue)
+                            .foregroundColor(accentColor)
                         }
                     }
                     
@@ -218,7 +228,7 @@ struct ConsoleLogsView: View {
                             logManager.clearLogs()
                         }) {
                             Text("Clear")
-                                .foregroundColor(.blue)
+                                .foregroundColor(accentColor)
                         }
                     }
                 }
@@ -298,7 +308,7 @@ struct ConsoleLogsView: View {
         case .error:
             return .red
         case .debug:
-            return .blue
+            return accentColor
         case .warning:
             return .orange
         }

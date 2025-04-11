@@ -17,10 +17,10 @@ extension UIDocumentPickerViewController {
 struct HomeView: View {
 
     @AppStorage("username") private var username = "User"
-    @AppStorage("customBackgroundColor") private var customBackgroundColorHex: String = ""
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
-    @State private var selectedBackgroundColor: Color = Color(hex: UserDefaults.standard.string(forKey: "customBackgroundColor") ?? "") ?? .clear
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accentColor) private var environmentAccentColor
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @AppStorage("bundleID") private var bundleID: String = ""
     @State private var isProcessing = false
@@ -35,14 +35,18 @@ struct HomeView: View {
     @State private var viewDidAppeared = false
     @State private var pendingBundleIdToEnableJIT : String? = nil
     
-
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
 
     var body: some View {
         ZStack {
-            // Use the background color or default to appearance-based color if not set
-            (selectedBackgroundColor == .clear ? 
-                (colorScheme == .dark ? Color.black : Color.white) : 
-                selectedBackgroundColor)
+            // Use system background
+            Color(colorScheme == .dark ? .black : .white)
             .edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 25) {
@@ -88,10 +92,10 @@ struct HomeView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(accentColor)
+                    .foregroundColor(accentColor.contrastText())
                     .cornerRadius(16)
-                    .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 20)
                 
@@ -268,11 +272,8 @@ struct HomeView: View {
     }
     
     private func refreshBackground() {
-        if customBackgroundColorHex.isEmpty {
-            selectedBackgroundColor = colorScheme == .dark ? Color.black : Color.white
-        } else {
-            selectedBackgroundColor = Color(hex: customBackgroundColorHex) ?? (colorScheme == .dark ? Color.black : Color.white)
-        }
+        // This function is no longer needed for background color
+        // but we'll keep it empty to avoid breaking anything
     }
     
     private func startJITInBackground(with bundleID: String) {

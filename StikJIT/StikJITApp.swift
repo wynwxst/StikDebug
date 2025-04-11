@@ -9,6 +9,18 @@ import SwiftUI
 import Network
 import UniformTypeIdentifiers
 
+// Add an accent color environment key
+struct AccentColorKey: EnvironmentKey {
+    static let defaultValue: Color = .blue
+}
+
+extension EnvironmentValues {
+    var accentColor: Color {
+        get { self[AccentColorKey.self] }
+        set { self[AccentColorKey.self] = newValue }
+    }
+}
+
 let fileManager = FileManager.default
 
 
@@ -442,6 +454,15 @@ func startHeartbeatInBackground() {
 struct LoadingView: View {
     @State private var animate = false
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
+    
+    private var accentColor: Color {
+        if customAccentColorHex.isEmpty {
+            return .blue
+        } else {
+            return Color(hex: customAccentColorHex) ?? .blue
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -464,8 +485,8 @@ struct LoadingView: View {
                         .trim(from: 0, to: 0.7)
                         .stroke(AngularGradient(
                             gradient: Gradient(colors: [
-                                colorScheme == .dark ? Color.white.opacity(0.8) : Color.blue.opacity(0.8),
-                                colorScheme == .dark ? Color.white.opacity(0.3) : Color.blue.opacity(0.3)
+                                accentColor.opacity(0.8),
+                                accentColor.opacity(0.3)
                             ]),
                             center: .center
                         ), style: StrokeStyle(lineWidth: 6, lineCap: .round))
@@ -474,9 +495,7 @@ struct LoadingView: View {
                         .animation(Animation.linear(duration: 1.2).repeatForever(autoreverses: false), value: animate)
                 }
                 // Shadow adapts to theme
-                .shadow(color: colorScheme == .dark ? 
-                    .white.opacity(0.5) : 
-                    .blue.opacity(0.3), 
+                .shadow(color: accentColor.opacity(0.4), 
                     radius: 10, x: 0, y: 0)
                 .onAppear {
                     animate = true
