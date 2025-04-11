@@ -167,7 +167,7 @@ struct ConsoleLogsView: View {
                                     return logPath
                                 }(),
                                 preview: SharePreview(
-                                    "StikJIT Logs",
+                                    "idevice_log.txt",
                                     image: Image(systemName: "doc.text")
                                 )
                             ) {
