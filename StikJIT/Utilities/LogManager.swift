@@ -88,4 +88,16 @@ class LogManager: ObservableObject {
             self.errorCount = 0
         }
     }
+    
+    func removeOldestLogs(count: Int) {
+        DispatchQueue.main.async {
+            // Remove the oldest logs and update error count
+            let removedLogs = self.logs.prefix(count)
+            self.logs.removeFirst(count)
+            
+            // Update error count by counting removed error logs
+            let removedErrorCount = removedLogs.filter { $0.type == .error }.count
+            self.errorCount = max(0, self.errorCount - removedErrorCount)
+        }
+    }
 } 

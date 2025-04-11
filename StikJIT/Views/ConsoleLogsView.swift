@@ -23,6 +23,14 @@ struct ConsoleLogsView: View {
     @State private var alertTitle = ""
     @State private var isError = false
     
+    // Timer to check for log updates
+    @State private var logCheckTimer: Timer? = nil
+    
+    // Track if the view is active (visible)
+    @State private var isViewActive = false
+    @State private var lastProcessedLineCount = 0  // Track last processed line count
+    @State private var isLoadingLogs = false  // Track loading state
+    
     private var accentColor: Color {
         if customAccentColorHex.isEmpty {
             return .blue
@@ -74,6 +82,16 @@ struct ConsoleLogsView: View {
                         }
                         .onAppear {
                             scrollView = proxy
+                            isViewActive = true
+                            // Load logs asynchronously
+                            Task {
+                                await loadIdeviceLogsAsync()
+                            }
+                            startLogCheckTimer()
+                        }
+                        .onDisappear {
+                            isViewActive = false
+                            stopLogCheckTimer()
                         }
                         .onChange(of: logManager.logs.count) {
                             if autoScroll, let lastLog = logManager.logs.last {
@@ -224,11 +242,23 @@ struct ConsoleLogsView: View {
                     }
                     
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            logManager.clearLogs()
-                        }) {
-                            Text("Clear")
-                                .foregroundColor(accentColor)
+                        HStack {
+                            Button(action: {
+                                // Load the logs again
+                                Task {
+                                    await loadIdeviceLogsAsync()
+                                }
+                            }) {
+                                Image(systemName: "arrow.clockwise")
+                                    .foregroundColor(accentColor)
+                            }
+                            
+                            Button(action: {
+                                logManager.clearLogs()
+                            }) {
+                                Text("Clear")
+                                    .foregroundColor(accentColor)
+                            }
                         }
                     }
                 }
@@ -312,6 +342,144 @@ struct ConsoleLogsView: View {
         case .warning:
             return .orange
         }
+    }
+    
+    // Function to load idevice logs from file asynchronously
+    private func loadIdeviceLogsAsync() async {
+        guard !isLoadingLogs else { return }
+        isLoadingLogs = true
+        
+        // Get the path to the idevice log file
+        let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt").path
+        
+        // Check if the file exists
+        guard FileManager.default.fileExists(atPath: logPath) else {
+            await MainActor.run {
+                logManager.addInfoLog("No idevice logs found (Restart the app to continue reading)")
+                isLoadingLogs = false
+            }
+            return
+        }
+        
+        do {
+            // Read the file content
+            let logContent = try String(contentsOfFile: logPath, encoding: .utf8)
+            let lines = logContent.components(separatedBy: .newlines)
+            
+            // Only take the last 300 lines
+            let maxLines = 300
+            let startIndex = max(0, lines.count - maxLines)
+            let recentLines = Array(lines[startIndex..<lines.count])
+            
+            // Update the last processed line count
+            lastProcessedLineCount = lines.count
+            
+            await MainActor.run {
+                // Clear existing logs
+                logManager.clearLogs()
+                
+                // Add device info
+                logManager.addInfoLog("=== DEVICE INFORMATION ===")
+                logManager.addInfoLog("Version: \(UIDevice.current.systemVersion)")
+                logManager.addInfoLog("Name: \(UIDevice.current.name)")
+                logManager.addInfoLog("Model: \(UIDevice.current.model)")
+                logManager.addInfoLog("StikJIT Version: App Version: 1.0")
+                logManager.addInfoLog("=== LOG ENTRIES ===")
+                
+                // Process recent lines
+                for line in recentLines {
+                    if line.isEmpty { continue }
+                    
+                    if line.contains("ERROR") || line.contains("Error") {
+                        logManager.addErrorLog(line)
+                    } else if line.contains("WARNING") || line.contains("Warning") {
+                        logManager.addWarningLog(line)
+                    } else if line.contains("DEBUG") {
+                        logManager.addDebugLog(line)
+                    } else {
+                        logManager.addInfoLog(line)
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                logManager.addErrorLog("Failed to read idevice logs: \(error.localizedDescription)")
+            }
+        }
+        
+        await MainActor.run {
+            isLoadingLogs = false
+        }
+    }
+    
+    // Update the timer function to use async loading
+    private func startLogCheckTimer() {
+        logCheckTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            if isViewActive {
+                Task {
+                    await checkForNewLogs()
+                }
+            }
+        }
+    }
+    
+    // Function to check for new logs
+    private func checkForNewLogs() async {
+        guard !isLoadingLogs else { return }
+        isLoadingLogs = true
+        
+        let logPath = URL.documentsDirectory.appendingPathComponent("idevice_log.txt").path
+        
+        guard FileManager.default.fileExists(atPath: logPath) else {
+            isLoadingLogs = false
+            return
+        }
+        
+        do {
+            let logContent = try String(contentsOfFile: logPath, encoding: .utf8)
+            let lines = logContent.components(separatedBy: .newlines)
+            
+            // Only process new lines
+            if lines.count > lastProcessedLineCount {
+                let newLines = Array(lines[lastProcessedLineCount..<lines.count])
+                lastProcessedLineCount = lines.count
+                
+                await MainActor.run {
+                    for line in newLines {
+                        if line.isEmpty { continue }
+                        
+                        if line.contains("ERROR") || line.contains("Error") {
+                            logManager.addErrorLog(line)
+                        } else if line.contains("WARNING") || line.contains("Warning") {
+                            logManager.addWarningLog(line)
+                        } else if line.contains("DEBUG") {
+                            logManager.addDebugLog(line)
+                        } else {
+                            logManager.addInfoLog(line)
+                        }
+                    }
+                    
+                    // Keep only the last 300 lines
+                    let maxLines = 300
+                    if logManager.logs.count > maxLines {
+                        let excessCount = logManager.logs.count - maxLines
+                        logManager.removeOldestLogs(count: excessCount)
+                    }
+                }
+            }
+        } catch {
+            await MainActor.run {
+                logManager.addErrorLog("Failed to read new logs: \(error.localizedDescription)")
+            }
+        }
+        
+        isLoadingLogs = false
+    }
+    
+    // Function to stop the timer
+    private func stopLogCheckTimer() {
+        logCheckTimer?.invalidate()
+        logCheckTimer = nil
     }
 }
 
