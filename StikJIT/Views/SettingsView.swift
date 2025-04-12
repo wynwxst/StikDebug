@@ -5,6 +5,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
@@ -97,31 +98,23 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            // Display and App Icon buttons
-                            VStack(spacing: 12) {
+                            VStack(spacing: 6) {
                                 Button(action: {
                                     showingDisplayView = true
                                 }) {
                                     HStack {
                                         Image(systemName: "paintbrush")
                                             .font(.system(size: 18))
-                                            .foregroundColor(accentColor)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Text("Display")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(UIColor.tertiarySystemBackground))
-                                    .cornerRadius(12)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding(.vertical, 8)
                                 
                                 Button(action: {
                                     showingAppIconSheet = true
@@ -129,23 +122,16 @@ struct SettingsView: View {
                                     HStack {
                                         Image(systemName: "app")
                                             .font(.system(size: 18))
-                                            .foregroundColor(accentColor)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Text("App Icon")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(UIColor.tertiarySystemBackground))
-                                    .cornerRadius(12)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)
@@ -427,13 +413,10 @@ struct SettingsView: View {
                                 // Existing Links
                                 LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
                                 LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
-                                
                                 // New Discord Link
                                 LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
-                                
                                 //autoJIT HomeScreen Edition shortcut link
                                 LinkRow(icon: "sparkles", title: "iOS Shortcut", url: "https://www.icloud.com/shortcuts/1e1b522ea1e045ebb0921d31870d8cb4")
-                                
                                 // StikNES promotion
                                 Button(action: {
                                     if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
@@ -447,7 +430,7 @@ struct SettingsView: View {
                                         Image(systemName: "gamecontroller")
                                             .font(.system(size: 14))
                                             .foregroundColor(accentColor)
-                                            .frame(width: 24) // Keep consistent with LinkRow
+                                            .frame(width: 24)
                                     }
                                 }
                                 .padding(.vertical, 8)
@@ -458,29 +441,54 @@ struct SettingsView: View {
                     }
                     .padding(.bottom, 4)
                     
-                    // System Logs card
+                    // Advanced Settings Card
                     SettingsCard {
-                        Button(action: {
-                            showingConsoleLogsView = true
-                        }) {
-                            HStack {
-                                Image(systemName: "terminal")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(accentColor)
-                                Text("System Logs")
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Techy Things")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            VStack(spacing: 6) {
+                                // System Logs button
+                                Button(action: {
+                                    showingConsoleLogsView = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "terminal")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Text("System Logs")
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(accentColor)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                
+                                // App Folder button
+                                Button(action: {
+                                    openAppFolder()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "folder")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Text("App Folder")
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(accentColor)
+                                    }
+                                }
+                                .padding(.vertical, 8)
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
                     }
                     .padding(.bottom, 4)
                     .sheet(isPresented: $showingConsoleLogsView) {
@@ -490,7 +498,7 @@ struct SettingsView: View {
                         DisplayView()
                     }
                     
-                    // Version info should now come after System Logs
+                    // Version info should now come after Advanced Settings
                     HStack {
                         Spacer()
                         
@@ -627,6 +635,19 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
         .padding(.horizontal)
+    }
+
+    private func openAppFolder() {
+        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let path = documentsURL.absoluteString.replacingOccurrences(of: "file://", with: "shareddocuments://")
+            if let url = URL(string: path) {
+                UIApplication.shared.open(url, options: [:]) { success in
+                    if !success {
+                        print("Failed to open app folder")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -825,5 +846,26 @@ struct CollaboratorRow: View {
 struct ConsoleLogsView_Preview: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
+    }
+}
+
+// Add this UIViewController before the SettingsView struct
+class FolderViewController: UIViewController {
+    func openAppFolder() {
+        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        guard let documentsDirectory = paths.first else { return }
+        
+        // Go up one level to get the app's container directory
+        let containerPath = (documentsDirectory as NSString).deletingLastPathComponent
+        
+        if let folderURL = URL(string: "shareddocuments://\(containerPath)") {
+            UIApplication.shared.open(folderURL, options: [:]) { success in
+                if !success {
+                    // Fallback to regular URL
+                    let regularURL = URL(fileURLWithPath: containerPath)
+                    UIApplication.shared.open(regularURL, options: [:], completionHandler: nil)
+                }
+            }
+        }
     }
 }
