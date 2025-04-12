@@ -5,6 +5,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct SettingsView: View {
     @AppStorage("username") private var username = "User"
@@ -112,7 +113,7 @@ struct SettingsView: View {
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
                                     .padding(.vertical, 12)
                                     .padding(.horizontal, 16)
@@ -136,7 +137,7 @@ struct SettingsView: View {
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
                                     .padding(.vertical, 12)
                                     .padding(.horizontal, 16)
@@ -477,7 +478,7 @@ struct SettingsView: View {
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
                                 }
                                 .padding(.vertical, 8)
@@ -495,7 +496,7 @@ struct SettingsView: View {
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(accentColor)
                                     }
                                 }
                                 .padding(.vertical, 8)
@@ -652,50 +653,15 @@ struct SettingsView: View {
     }
 
     private func openAppFolder() {
-        // Get the app's documents directory
-        let documentsPath = URL.documentsDirectory
-        
-        // Create a URL for the StikJIT folder
-        let stikJITFolderURL = documentsPath.appendingPathComponent("StikJIT")
-        
-        // Create the folder if it doesn't exist
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: stikJITFolderURL.path) {
-            do {
-                try fileManager.createDirectory(at: stikJITFolderURL, withIntermediateDirectories: true)
-            } catch {
-                print("Error creating StikJIT folder: \(error)")
-            }
-        }
-        
-        // Create a temporary file inside the StikJIT folder
-        let tempFileURL = stikJITFolderURL.appendingPathComponent("open_folder.txt")
-        
-        do {
-            // Create a simple text file
-            try "Open this folder in Files app".write(to: tempFileURL, atomically: true, encoding: .utf8)
-            
-            // Open the file in Files app
-            DispatchQueue.main.async {
-                let activityVC = UIActivityViewController(
-                    activityItems: [tempFileURL],
-                    applicationActivities: nil
-                )
-                
-                // Get the root view controller
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let rootViewController = windowScene.windows.first?.rootViewController {
-                    // Present the activity view controller
-                    rootViewController.present(activityVC, animated: true) {
-                        // Delete the temporary file after a delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            try? fileManager.removeItem(at: tempFileURL)
-                        }
+        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let path = documentsURL.absoluteString.replacingOccurrences(of: "file://", with: "shareddocuments://")
+            if let url = URL(string: path) {
+                UIApplication.shared.open(url, options: [:]) { success in
+                    if !success {
+                        print("Failed to open app folder")
                     }
                 }
             }
-        } catch {
-            print("Error creating temporary file: \(error)")
         }
     }
 }
@@ -895,5 +861,26 @@ struct CollaboratorRow: View {
 struct ConsoleLogsView_Preview: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
+    }
+}
+
+// Add this UIViewController before the SettingsView struct
+class FolderViewController: UIViewController {
+    func openAppFolder() {
+        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+        guard let documentsDirectory = paths.first else { return }
+        
+        // Go up one level to get the app's container directory
+        let containerPath = (documentsDirectory as NSString).deletingLastPathComponent
+        
+        if let folderURL = URL(string: "shareddocuments://\(containerPath)") {
+            UIApplication.shared.open(folderURL, options: [:]) { success in
+                if !success {
+                    // Fallback to regular URL
+                    let regularURL = URL(fileURLWithPath: containerPath)
+                    UIApplication.shared.open(regularURL, options: [:], completionHandler: nil)
+                }
+            }
+        }
     }
 }
