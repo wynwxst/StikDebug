@@ -11,6 +11,10 @@
 #include <limits.h>
 #include "heartbeat.h"
 
+
+bool isHeartbeat = false;
+
+
 void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provider, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger) {
     int currentSessionId = *heartbeatSessionId;
     
@@ -47,6 +51,7 @@ void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provid
     
     completion(0, "Heartbeat Completed");
     
+    isHeartbeat = true;
     u_int64_t current_interval = 15;
     while (1) {
         if(*heartbeatSessionId != currentSessionId) {
@@ -58,6 +63,7 @@ void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provid
         err = heartbeat_get_marco(client, current_interval, &new_interval);
         if (err != IdeviceSuccess) {
             logger("DEBUG: Failed to get marco: %d", err);
+            isHeartbeat = false;
             heartbeat_client_free(client);
             return;
         }
@@ -68,9 +74,11 @@ void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provid
         err = heartbeat_send_polo(client);
         if (err != IdeviceSuccess) {
             logger("DEBUG: Failed to send polo: %d", err);
+            isHeartbeat = false;
             heartbeat_client_free(client);
             return;
         }
         logger("DEBUG: Polo reply sent successfully.");
+        isHeartbeat = true;
     }
 }

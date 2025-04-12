@@ -13,6 +13,8 @@
 typedef void (^HeartbeatCompletionHandlerC)(int result, const char *message);
 typedef void (^LogFuncC)(const char* message, ...);
 
+extern bool isHeartbeat;
+
 void startHeartbeat(IdevicePairingFile* pairintFile, TcpProviderHandle** provider, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger);
 
 #endif /* HEARTBEAT_H */

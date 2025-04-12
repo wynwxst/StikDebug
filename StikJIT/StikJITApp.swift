@@ -83,7 +83,7 @@ func UpdateRetrieval() -> Bool{
 
 @main
 struct HeartbeatApp: App {
-    @State private var isLoading = true
+    @State private var isLoading2 = true
     @State private var isPairing = false
     @State private var heartBeat = false
     @State private var error: Int32? = nil
@@ -91,6 +91,7 @@ struct HeartbeatApp: App {
     @State private var alert_string = ""
     @State private var alert_title = ""
     @StateObject private var mount = MountingProgress.shared
+    @Environment(\.scenePhase) private var scenePhase
     
     let urls: [String] = [
         "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/BuildManifest.plist",
@@ -139,7 +140,7 @@ struct HeartbeatApp: App {
     }
     var body: some Scene {
         WindowGroup {
-            if isLoading {
+            if isLoading2 {
                 LoadingView()
                     .onAppear {
                         startProxy() { result, error in
@@ -149,7 +150,7 @@ struct HeartbeatApp: App {
                                         if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
                                             Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
                                                 if pubHeartBeat {
-                                                    isLoading = false
+                                                    isLoading2 = false
                                                     timer.invalidate()
                                                 } else {
                                                     if let error {
@@ -165,7 +166,7 @@ struct HeartbeatApp: App {
                                             
                                             startHeartbeatInBackground()
                                         } else {
-                                            isLoading = false
+                                            isLoading2 = false
                                         }
                                     } else if let vpn_error {
                                         showAlert(title: "Error", message: "EM Proxy failed to connect: \(vpn_error)", showOk: true) { _ in
@@ -224,6 +225,12 @@ struct HeartbeatApp: App {
                                         show_alert = true
                                     }
                                 }
+                            }
+                        }
+                        
+                        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                            if !isHeartbeat {
+                                startHeartbeatInBackground()
                             }
                         }
                     }
