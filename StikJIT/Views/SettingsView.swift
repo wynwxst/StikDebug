@@ -98,31 +98,23 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            // Display and App Icon buttons
-                            VStack(spacing: 12) {
+                            VStack(spacing: 6) {
                                 Button(action: {
                                     showingDisplayView = true
                                 }) {
                                     HStack {
                                         Image(systemName: "paintbrush")
                                             .font(.system(size: 18))
-                                            .foregroundColor(accentColor)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Text("Display")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
                                             .foregroundColor(accentColor)
                                     }
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(UIColor.tertiarySystemBackground))
-                                    .cornerRadius(12)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding(.vertical, 8)
                                 
                                 Button(action: {
                                     showingAppIconSheet = true
@@ -130,23 +122,16 @@ struct SettingsView: View {
                                     HStack {
                                         Image(systemName: "app")
                                             .font(.system(size: 18))
-                                            .foregroundColor(accentColor)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Text("App Icon")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.primary.opacity(0.8))
                                         Spacer()
                                         Image(systemName: "chevron.right")
                                             .font(.system(size: 14))
                                             .foregroundColor(accentColor)
                                     }
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(UIColor.tertiarySystemBackground))
-                                    .cornerRadius(12)
-                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)
