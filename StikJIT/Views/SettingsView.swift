@@ -427,13 +427,10 @@ struct SettingsView: View {
                                 // Existing Links
                                 LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
                                 LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
-                                
                                 // New Discord Link
                                 LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
-                                
                                 //autoJIT HomeScreen Edition shortcut link
                                 LinkRow(icon: "sparkles", title: "iOS Shortcut", url: "https://www.icloud.com/shortcuts/1e1b522ea1e045ebb0921d31870d8cb4")
-                                
                                 // StikNES promotion
                                 Button(action: {
                                     if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
@@ -447,7 +444,7 @@ struct SettingsView: View {
                                         Image(systemName: "gamecontroller")
                                             .font(.system(size: 14))
                                             .foregroundColor(accentColor)
-                                            .frame(width: 24) // Keep consistent with LinkRow
+                                            .frame(width: 24)
                                     }
                                 }
                                 .padding(.vertical, 8)
@@ -458,29 +455,54 @@ struct SettingsView: View {
                     }
                     .padding(.bottom, 4)
                     
-                    // System Logs card
+                    // Advanced Settings Card
                     SettingsCard {
-                        Button(action: {
-                            showingConsoleLogsView = true
-                        }) {
-                            HStack {
-                                Image(systemName: "terminal")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(accentColor)
-                                Text("System Logs")
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Advanced Settings")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            VStack(spacing: 6) {
+                                // System Logs button
+                                Button(action: {
+                                    showingConsoleLogsView = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "terminal")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Text("System Logs")
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                
+                                // App Folder button
+                                Button(action: {
+                                    openAppFolder()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "folder")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Text("App Folder")
+                                            .foregroundColor(.primary.opacity(0.8))
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 8)
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
                     }
                     .padding(.bottom, 4)
                     .sheet(isPresented: $showingConsoleLogsView) {
@@ -490,7 +512,7 @@ struct SettingsView: View {
                         DisplayView()
                     }
                     
-                    // Version info should now come after System Logs
+                    // Version info should now come after Advanced Settings
                     HStack {
                         Spacer()
                         
@@ -627,6 +649,54 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
         .padding(.horizontal)
+    }
+
+    private func openAppFolder() {
+        // Get the app's documents directory
+        let documentsPath = URL.documentsDirectory
+        
+        // Create a URL for the StikJIT folder
+        let stikJITFolderURL = documentsPath.appendingPathComponent("StikJIT")
+        
+        // Create the folder if it doesn't exist
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: stikJITFolderURL.path) {
+            do {
+                try fileManager.createDirectory(at: stikJITFolderURL, withIntermediateDirectories: true)
+            } catch {
+                print("Error creating StikJIT folder: \(error)")
+            }
+        }
+        
+        // Create a temporary file inside the StikJIT folder
+        let tempFileURL = stikJITFolderURL.appendingPathComponent("open_folder.txt")
+        
+        do {
+            // Create a simple text file
+            try "Open this folder in Files app".write(to: tempFileURL, atomically: true, encoding: .utf8)
+            
+            // Open the file in Files app
+            DispatchQueue.main.async {
+                let activityVC = UIActivityViewController(
+                    activityItems: [tempFileURL],
+                    applicationActivities: nil
+                )
+                
+                // Get the root view controller
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootViewController = windowScene.windows.first?.rootViewController {
+                    // Present the activity view controller
+                    rootViewController.present(activityVC, animated: true) {
+                        // Delete the temporary file after a delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                            try? fileManager.removeItem(at: tempFileURL)
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("Error creating temporary file: \(error)")
+        }
     }
 }
 

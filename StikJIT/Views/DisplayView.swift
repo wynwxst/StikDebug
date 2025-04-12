@@ -182,7 +182,7 @@ struct DisplayView: View {
                                 .foregroundColor(.primary)
                                 .tint(.green)
                             
-                            Text("Disabling this will hide app icons in the app list and may improve performance, while also giving it a more aesthetic look.")
+                            Text("Disabling this will hide app icons in the app list and may improve performance, while also giving it a more minimalistic look.")
                                 .font(.footnote)
                                 .foregroundColor(Color(UIColor.secondaryLabel))
                         }
