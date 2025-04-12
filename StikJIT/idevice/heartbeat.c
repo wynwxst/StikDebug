@@ -18,11 +18,13 @@ bool isHeartbeat = false;
 void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provider, int* heartbeatSessionId, HeartbeatCompletionHandlerC completion, LogFuncC logger) {
     int currentSessionId = *heartbeatSessionId;
     
+    isHeartbeat = true;
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     if (inet_pton(AF_INET, "10.7.0.1", &addr.sin_addr) <= 0) {
         logger("DEBUG: Error converting IP address.");
+        isHeartbeat = false;
         return;
     }
     logger("DEBUG: Socket address created for IP 10.7.0.1");
@@ -35,6 +37,7 @@ void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provid
     if (err != IdeviceSuccess) {
         logger("DEBUG: Failed to create TCP provider: %d", err);
         completion(err, "Failed to create TCP provider");
+        isHeartbeat = false;
         return;
     }
     logger("DEBUG: TCP provider created successfully.");
@@ -45,13 +48,13 @@ void startHeartbeat(IdevicePairingFile* pairing_file, TcpProviderHandle** provid
     if (err != IdeviceSuccess) {
         completion(err, "Failed to connect to Heartbeat");
         logger("DEBUG: Failed to connect to installation proxy: %d", err);
+        isHeartbeat = false;
         return;
     }
     logger("DEBUG: Connected to heartbeat successfully.");
     
     completion(0, "Heartbeat Completed");
     
-    isHeartbeat = true;
     u_int64_t current_interval = 15;
     while (1) {
         if(*heartbeatSessionId != currentSessionId) {

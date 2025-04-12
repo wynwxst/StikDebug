@@ -462,6 +462,7 @@ func startHeartbeatInBackground() {
                         timer.invalidate()
                     }
                 }
+                
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 
