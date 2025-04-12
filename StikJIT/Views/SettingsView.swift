@@ -23,12 +23,14 @@ struct SettingsView: View {
     @State private var importProgress: Float = 0.0
     @State private var is_lc = false
     @State private var showColorPickerPopup = false
+    @State private var showingAppIconSheet = false
     
     @StateObject private var mountProg = MountingProgress.shared
     
     @State private var mounted = false
     
     @State private var showingConsoleLogsView = false
+    @State private var showingDisplayView = false
     
     private var appVersion: String {
         let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -81,25 +83,6 @@ struct SettingsView: View {
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
-                        
-                        // Username Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Username")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            TextField("Username", text: $username)
-                                .padding(14)
-                                .background(Color(UIColor.tertiarySystemBackground))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                                .shadow(color: Color.black.opacity(0.03), radius: 1, x: 0, y: 1)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
                     }
                     
                     Divider()
@@ -114,68 +97,62 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            // Theme selector with segmented control style
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Accent Color")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                
-                                // Clean segmented style picker
-                                Picker("Theme Mode", selection: Binding(
-                                    get: { customAccentColorHex.isEmpty },
-                                    set: { newValue in
-                                        if newValue {
-                                            // System accent color selected
-                                            customAccentColorHex = ""
-                                            selectedAccentColor = .blue
-                                        } else if customAccentColorHex.isEmpty {
-                                            // Custom color selected - initialize with current theme color
-                                            selectedAccentColor = .blue
-                                            customAccentColorHex = selectedAccentColor.toHex() ?? "#0000FF"
-                                        }
-                                    }
-                                )) {
-                                    Text("Default").tag(true)
-                                    Text("Custom").tag(false)
-                                }
-                                .pickerStyle(SegmentedPickerStyle())
-                                .padding(.vertical, 4)
-                                
-                                // Show selection button and color picker inline when in custom mode
-                                if !customAccentColorHex.isEmpty {
+                            // Display and App Icon buttons
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    showingDisplayView = true
+                                }) {
                                     HStack {
-                                        // Left side - just text, no color preview
-                                        Text("Choose color")
-                                            .font(.subheadline)
+                                        Image(systemName: "paintbrush")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(accentColor)
+                                        Text("Display")
                                             .fontWeight(.medium)
-                                        
+                                            .foregroundColor(.primary)
                                         Spacer()
-                                        
-                                        // Right side - embedded color picker
-                                        ColorPicker("", selection: $selectedAccentColor, supportsOpacity: false)
-                                            .labelsHidden()
-                                            .scaleEffect(0.8)
-                                            .onChange(of: selectedAccentColor) { newColor in
-                                                saveCustomAccentColor(newColor)
-                                            }
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
                                     }
-                                    .padding(.vertical, 8)
-                                    .transition(.opacity)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color(UIColor.tertiarySystemBackground))
+                                    .cornerRadius(12)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(PlainButtonStyle())
                                 
-                                // Help text - only show for system mode
-                                if customAccentColorHex.isEmpty {
-                                    Text("Uses default blue accent color")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .padding(.top, 4)
+                                Button(action: {
+                                    showingAppIconSheet = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "app")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(accentColor)
+                                        Text("App Icon")
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color(UIColor.tertiarySystemBackground))
+                                    .cornerRadius(12)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .padding(.vertical, 6)
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
-                        .animation(.easeInOut(duration: 0.2), value: customAccentColorHex.isEmpty)
+                    }
+                    .sheet(isPresented: $showingAppIconSheet) {
+                        AppIconView()
                     }
                     
                     SettingsCard {
@@ -508,6 +485,9 @@ struct SettingsView: View {
                     .padding(.bottom, 4)
                     .sheet(isPresented: $showingConsoleLogsView) {
                         ConsoleLogsView()
+                    }
+                    .sheet(isPresented: $showingDisplayView) {
+                        DisplayView()
                     }
                     
                     // Version info should now come after System Logs

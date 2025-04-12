@@ -64,6 +64,7 @@ struct AppButton: View {
     @State var appName: String
     @Binding var recentApps: [String]
     @Binding var appIcons: [String: UIImage]
+    @AppStorage("loadAppIconsOnJIT") private var loadAppIconsOnJIT = true
     var onSelectApp: (String) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -77,28 +78,31 @@ struct AppButton: View {
             }
             onSelectApp(bundleID)
         }) {
-            HStack(spacing: 16) {
-                if let image = appIcons[bundleID] {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 60, height: 60)
-                        .cornerRadius(12)
-                        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.gray.opacity(0.2), radius: 3, x: 0, y: 1)
-                } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(UIColor.systemGray5))
-                        .frame(width: 60, height: 60)
-                        .overlay(
-                            Image(systemName: "app")
-                                .font(.system(size: 26))
-                                .foregroundColor(.gray)
-                        )
-                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        .onAppear {
-                            loadAppIcon(for: bundleID)
-                        }
+            HStack(spacing: loadAppIconsOnJIT ? 16 : 12) {
+                if loadAppIconsOnJIT {
+                    if let image = appIcons[bundleID] {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 60, height: 60)
+                            .cornerRadius(12)
+                            .shadow(color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.gray.opacity(0.2), radius: 3, x: 0, y: 1)
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(UIColor.systemGray5))
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                Image(systemName: "app")
+                                    .font(.system(size: 26))
+                                    .foregroundColor(.gray)
+                            )
+                            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                            .onAppear {
+                                loadAppIcon(for: bundleID)
+                            }
+                    }
                 }
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(appName)
                         .font(.system(size: 18, weight: .semibold))
@@ -110,15 +114,18 @@ struct AppButton: View {
                 }
                 Spacer()
             }
+            .padding(.vertical, loadAppIconsOnJIT ? 0 : 8)
         }
     }
 
     private func loadAppIcon(for bundleID: String) {
-        AppStoreIconFetcher.getIcon(for: bundleID) { image in
-            if let image = image {
-                DispatchQueue.main.async {
-                    withAnimation(.easeIn(duration: 0.2)) {
-                        self.appIcons[bundleID] = image
+        if loadAppIconsOnJIT {
+            AppStoreIconFetcher.getIcon(for: bundleID) { image in
+                if let image = image {
+                    DispatchQueue.main.async {
+                        withAnimation(.easeIn(duration: 0.2)) {
+                            self.appIcons[bundleID] = image
+                        }
                     }
                 }
             }
