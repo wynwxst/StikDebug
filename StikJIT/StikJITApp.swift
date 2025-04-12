@@ -9,7 +9,6 @@ import SwiftUI
 import Network
 import UniformTypeIdentifiers
 
-// Add an accent color environment key
 struct AccentColorKey: EnvironmentKey {
     static let defaultValue: Color = .blue
 }
@@ -23,29 +22,19 @@ extension EnvironmentValues {
 
 let fileManager = FileManager.default
 
-
-
-func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
+func httpGet(_ urlString: String, result: @escaping (String?) -> Void) {
     if let url = URL(string: urlString) {
-        
-
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            
-
             if let error = error {
                 print("Error: \(error.localizedDescription)")
                 result(nil)
                 return
             }
             
-
             if let data = data, let httpResponse = response as? HTTPURLResponse {
-                
-
                 if httpResponse.statusCode == 200 {
                     print("Response: \(httpResponse.statusCode)")
                     
-
                     if let DataString = String(data: data, encoding: .utf8) {
                         result(DataString)
                     }
@@ -54,31 +43,25 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void){
                 }
             }
         }
-        
-
         task.resume()
     }
 }
 
-func UpdateRetrieval() -> Bool{
-
+func UpdateRetrieval() -> Bool {
     var ver: String {
-         let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-         return marketingVersion
+        let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        return marketingVersion
     }
     let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
     var res = false
     httpGet(urlString) { result in
         if let fc = result {
-            if (ver != fc){
+            if (ver != fc) {
                 res = true
             }
-        } // if nil then request failed so we won't throw an error
-
+        }
     }
     return res
-    
-    
 }
 
 @main
@@ -92,8 +75,7 @@ struct HeartbeatApp: App {
     @State private var alert_title = ""
     @StateObject private var mount = MountingProgress.shared
     @AppStorage("appTheme") private var appTheme: String = "system"
-    @Environment(\.scenePhase) private var scenePhase
-
+    @Environment(\.scenePhase) private var scenePhase   // Observe scene lifecycle
     
     let urls: [String] = [
         "https://github.com/doronz88/DeveloperDiskImage/raw/refs/heads/main/PersonalizedImages/Xcode_iOS_DDI_Personalized/BuildManifest.plist",
@@ -102,7 +84,7 @@ struct HeartbeatApp: App {
     ]
     
     let outputDir: String = "DDI"
-
+    
     let outputFiles: [String] = [
         "DDI/BuildManifest.plist",
         "DDI/Image.dmg",
@@ -128,16 +110,13 @@ struct HeartbeatApp: App {
             }
         }
     }
+    
     func newVerCheck() {
         let currentDate = Calendar.current.startOfDay(for: Date())
-
-
         let VUA = UserDefaults.standard.object(forKey: "VersionUpdateAlert") as? Date ?? Date.distantPast
-
-
+        
         if currentDate > Calendar.current.startOfDay(for: VUA) {
-
-            if (UpdateRetrieval()){
+            if UpdateRetrieval() {
                 alert_title = "Update Avaliable!"
                 let urlString = "https://raw.githubusercontent.com/0-Blu/StikJIT/refs/heads/main/version.txt"
                 httpGet(urlString) { result in
@@ -145,14 +124,11 @@ struct HeartbeatApp: App {
                     alert_string = "Update to: version \(result!)!"
                     show_alert = true
                 }
-                
-                
             }
-
-
             UserDefaults.standard.set(currentDate, forKey: "VersionUpdateAlert")
         }
     }
+    
     private func applyTheme() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first {
@@ -166,6 +142,7 @@ struct HeartbeatApp: App {
             }
         }
     }
+    
     var body: some Scene {
         WindowGroup {
             if isLoading2 {
@@ -203,15 +180,12 @@ struct HeartbeatApp: App {
                                     }
                                 }
                             } else if let error {
-                                showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { cool in
-                                    
-                                }
+                                showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { _ in }
                             }
                         }
                     }
-                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) {result in
+                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
                         switch result {
-                            
                         case .success(let url):
                             let fileManager = FileManager.default
                             let accessing = url.startAccessingSecurityScopedResource()
@@ -221,7 +195,6 @@ struct HeartbeatApp: App {
                                     if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
                                         try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                                     }
-                                    
                                     try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                                     print("File copied successfully!")
                                     startHeartbeatInBackground()
@@ -241,14 +214,14 @@ struct HeartbeatApp: App {
                     }
             } else {
                 MainTabView()
-                    .onAppear() {
+                    .onAppear {
                         applyTheme()
                         let fileManager = FileManager.default
                         for (index, urlString) in urls.enumerated() {
                             let destinationURL = URL.documentsDirectory.appendingPathComponent(outputFiles[index])
                             if !fileManager.fileExists(atPath: destinationURL.path) {
-                                downloadFile(from: urlString, to: destinationURL){ result in
-                                    if (result != ""){
+                                downloadFile(from: urlString, to: destinationURL) { result in
+                                    if (result != "") {
                                         alert_title = "An Error has Occurred"
                                         alert_string = "[Download DDI Error]: " + result
                                         show_alert = true
@@ -274,16 +247,21 @@ struct HeartbeatApp: App {
                     )
             }
         }
+        // Monitor scene phase changes; when the app becomes active again, restart the heartbeat.
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                print("App became active – restarting heartbeat")
+                startHeartbeatInBackground()
+            }
+        }
     }
     
-
     func startProxy(callback: @escaping (Bool, Int?) -> Void) {
         let port = 51820
         let bindAddr = "127.0.0.1:\(port)"
         
         DispatchQueue.global(qos: .background).async {
             let result = start_emotional_damage(bindAddr)
-
             DispatchQueue.main.async {
                 if result == 0 {
                     print("DEBUG: em_proxy started successfully on port \(port)")
@@ -299,17 +277,13 @@ struct HeartbeatApp: App {
     private func checkVPNConnection(callback: @escaping (Bool, String?) -> Void) {
         let host = NWEndpoint.Host("10.7.0.1")
         let port = NWEndpoint.Port(rawValue: 62078)!
-        
         let connection = NWConnection(host: host, port: port, using: .tcp)
-        
-        // Create a variable to hold the timeout work item
         var timeoutWorkItem: DispatchWorkItem?
         
         timeoutWorkItem = DispatchWorkItem { [weak connection] in
             if connection?.state != .ready {
                 connection?.cancel()
                 DispatchQueue.main.async {
-                    // Only call back if we haven't already
                     if timeoutWorkItem?.isCancelled == false {
                         callback(false, "[TIMEOUT] The loopback VPN is not connected. Try closing this app, turn it off and back on.")
                     }
@@ -320,14 +294,12 @@ struct HeartbeatApp: App {
         connection.stateUpdateHandler = { [weak connection] state in
             switch state {
             case .ready:
-                // Connection succeeded - cancel the timeout
                 timeoutWorkItem?.cancel()
                 connection?.cancel()
                 DispatchQueue.main.async {
                     callback(true, nil)
                 }
             case .failed(let error):
-                // Connection failed - cancel the timeout
                 timeoutWorkItem?.cancel()
                 connection?.cancel()
                 DispatchQueue.main.async {
@@ -344,10 +316,7 @@ struct HeartbeatApp: App {
             }
         }
         
-        // Start the connection
         connection.start(queue: .global())
-        
-        // Schedule the timeout
         if let workItem = timeoutWorkItem {
             DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: workItem)
         }
@@ -358,21 +327,18 @@ var pubHeartBeat = false
 
 actor FunctionGuard<T> {
     private var runningTask: Task<T, Never>?
-
+    
     func execute(_ work: @escaping @Sendable () -> T) async -> T {
         if let task = runningTask {
-            return await task.value // If already running, wait for the existing result
+            return await task.value // Return existing task's result if running
         }
-
-        let task = Task.detached { work() } // Run in the background
+        let task = Task.detached { work() }
         runningTask = task
         let result = await task.value
         runningTask = nil
         return result
     }
 }
-
-
 
 class MountingProgress: ObservableObject {
     static var shared = MountingProgress()
@@ -389,32 +355,37 @@ class MountingProgress: ObservableObject {
     func progressCallback(progress: size_t, total: size_t, context: UnsafeMutableRawPointer?) {
         let percentage = Double(progress) / Double(total) * 100.0
         print("Mounting progress: \(percentage)%")
-        
         DispatchQueue.main.async {
             self.mountProgress = percentage
         }
     }
     
-    func pubMount() { mount() }
+    func pubMount() {
+        mount()
+    }
     
     private func mount() {
         self.coolisMounted = isMounted()
-        
         let fileManager = FileManager.default
         let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
         
         if isPairing(), !isMounted() {
-            if let mountingThread {
+            if let mountingThread = mountingThread {
                 mountingThread.cancel()
                 self.mountingThread = nil
             }
             
             mountingThread = Thread {
-                let mount = mountPersonalDDI(imagePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg").path, trustcachePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path, manifestPath: URL.documentsDirectory.appendingPathComponent("DDI/BuildManifest.plist").path, pairingFilePath: pairingpath)
+                let mountResult = mountPersonalDDI(
+                    imagePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg").path,
+                    trustcachePath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path,
+                    manifestPath: URL.documentsDirectory.appendingPathComponent("DDI/BuildManifest.plist").path,
+                    pairingFilePath: pairingpath
+                )
                 
-                if mount != 0 {
-                    showAlert(title: "Error", message: "An Error Occured when Mounting the DDI\nError Code: " + String(mount), showOk: true, showTryAgain: true) { cool in
-                        if cool {
+                if mountResult != 0 {
+                    showAlert(title: "Error", message: "An Error Occured when Mounting the DDI\nError Code: \(mountResult)", showOk: true, showTryAgain: true) { shouldTryAgain in
+                        if shouldTryAgain {
                             self.mount()
                         }
                     }
@@ -444,17 +415,15 @@ func isPairing() -> Bool {
 }
 
 func startHeartbeatInBackground() {
-    let heartBeat = Thread {
+    let heartBeatThread = Thread {
         let completionHandler: @convention(block) (Int32, String?) -> Void = { result, message in
             if result == 0 {
                 print("Heartbeat started successfully: \(message ?? "")")
-                
                 pubHeartBeat = true
                 
                 if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path) {
                     MountingProgress.shared.pubMount()
                 }
-                
                 
                 Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
                     if !isHeartbeat {
@@ -465,7 +434,6 @@ func startHeartbeatInBackground() {
                 
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
-                
                 DispatchQueue.main.async {
                     showAlert(
                         title: "Heartbeat Error",
@@ -480,15 +448,13 @@ func startHeartbeatInBackground() {
                 }
             }
         }
-        
         JITEnableContext.shared.startHeartbeat(completionHandler: completionHandler, logger: nil)
     }
     
-    heartBeat.qualityOfService = .background
-    heartBeat.name = "Heartbeat"
-    heartBeat.start()
+    heartBeatThread.qualityOfService = .background
+    heartBeatThread.name = "Heartbeat"
+    heartBeatThread.start()
 }
-
 
 struct LoadingView: View {
     @State private var animate = false
@@ -517,21 +483,16 @@ struct LoadingView: View {
     
     var body: some View {
         ZStack {
-            // Use theme-aware background color
             Color(isDarkMode ? .black : .white)
                 .ignoresSafeArea()
             
             VStack {
                 ZStack {
-                    // Background circle - slightly visible in both themes
                     Circle()
                         .stroke(lineWidth: 8)
-                        .foregroundColor(isDarkMode ? 
-                            Color.white.opacity(0.3) : 
-                            Color.black.opacity(0.1))
+                        .foregroundColor(isDarkMode ? Color.white.opacity(0.3) : Color.black.opacity(0.1))
                         .frame(width: 80, height: 80)
                     
-                    // Animated circle - adapts to theme
                     Circle()
                         .trim(from: 0, to: 0.7)
                         .stroke(AngularGradient(
@@ -545,19 +506,14 @@ struct LoadingView: View {
                         .frame(width: 80, height: 80)
                         .animation(Animation.linear(duration: 1.2).repeatForever(autoreverses: false), value: animate)
                 }
-                // Shadow adapts to theme
-                .shadow(color: accentColor.opacity(0.4), 
-                    radius: 10, x: 0, y: 0)
+                .shadow(color: accentColor.opacity(0.4), radius: 10, x: 0, y: 0)
                 .onAppear {
                     animate = true
                 }
                 
-                // Text adapts to theme
                 Text("Loading...")
                     .font(.system(size: 20, weight: .medium, design: .rounded))
-                    .foregroundColor(isDarkMode ? 
-                        .white.opacity(0.8) : 
-                        .black.opacity(0.8))
+                    .foregroundColor(isDarkMode ? .white.opacity(0.8) : .black.opacity(0.8))
                     .padding(.top, 20)
                     .opacity(animate ? 1.0 : 0.5)
                     .animation(Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: animate)
@@ -571,54 +527,45 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
         let rootViewController = UIApplication.shared.windows.last?.rootViewController
         
         if showTryAgain {
-            // Configure with "Try Again" button only (no Cancel button)
             let customErrorView = CustomErrorView(
                 title: title,
                 message: message,
                 onDismiss: {
-                    // Called when tapped outside
                     rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(false)
                 },
                 showButton: true,
                 primaryButtonText: "Try Again",
                 onPrimaryButtonTap: {
-                    // Try Again was tapped
                     completion(true)
                 }
             )
-            
             let hostingController = UIHostingController(rootView: customErrorView)
             hostingController.modalPresentationStyle = .overFullScreen
             hostingController.modalTransitionStyle = .crossDissolve
             hostingController.view.backgroundColor = .clear
             rootViewController?.present(hostingController, animated: true)
         } else if showOk {
-            // Configure with just "OK" button
             let customErrorView = CustomErrorView(
                 title: title,
                 message: message,
                 onDismiss: {
-                    // Called when tapped outside
                     rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(true)
                 },
                 showButton: true,
                 primaryButtonText: "OK",
                 onPrimaryButtonTap: {
-                    // OK was tapped
                     rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(true)
                 }
             )
-            
             let hostingController = UIHostingController(rootView: customErrorView)
             hostingController.modalPresentationStyle = .overFullScreen
             hostingController.modalTransitionStyle = .crossDissolve
             hostingController.view.backgroundColor = .clear
             rootViewController?.present(hostingController, animated: true)
         } else {
-            // No buttons case
             let customErrorView = CustomErrorView(
                 title: title,
                 message: message,
@@ -628,7 +575,6 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 },
                 showButton: false
             )
-            
             let hostingController = UIHostingController(rootView: customErrorView)
             hostingController.modalPresentationStyle = .overFullScreen
             hostingController.modalTransitionStyle = .crossDissolve
@@ -638,17 +584,16 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
     }
 }
 
-func downloadFile(from urlString: String, to destinationURL: URL,completion: @escaping (String) -> Void){
+func downloadFile(from urlString: String, to destinationURL: URL, completion: @escaping (String) -> Void) {
     let fileManager = FileManager.default
     let documentsDirectory = URL.documentsDirectory
-
     
     guard let url = URL(string: urlString) else {
         print("Invalid URL: \(urlString)")
         completion("[Internal Invalid URL error]")
         return
     }
-
+    
     let task = URLSession.shared.downloadTask(with: url) { (tempLocalUrl, response, error) in
         guard let tempLocalUrl = tempLocalUrl, error == nil else {
             print("Error downloading file from \(urlString): \(String(describing: error))")
@@ -657,17 +602,13 @@ func downloadFile(from urlString: String, to destinationURL: URL,completion: @es
         }
         
         do {
-            // Move the downloaded file to the destination
             try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
             try fileManager.moveItem(at: tempLocalUrl, to: destinationURL)
             print("Downloaded \(urlString) to \(destinationURL.path)")
-            
         } catch {
             print("Error saving file: \(error)")
-            
         }
     }
-    
     task.resume()
     completion("")
 }
