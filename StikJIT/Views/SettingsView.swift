@@ -420,7 +420,7 @@ struct SettingsView: View {
                                 
                                 // Vertical stack of collaborators
                                 VStack(spacing: 12) {
-                                    CollaboratorRow(name: "Stossy11", url: "https://github.com/Stossy11", imageUrl: developerProfiles["Stossy11"] ?? "")
+                                    CollaboratorRow(name: "Stossy11", url: "https://github.com/Stossy11", imageUrl: developerProfiles["Stossy11"] ?? "", quote: "I helped I guess :3")
                                     
                                     CollaboratorRow(name: "Neo", url: "https://neoarz.xyz/", imageUrl: developerProfiles["Neo"] ?? "")
                                     
@@ -794,6 +794,7 @@ struct CollaboratorRow: View {
     var name: String
     var url: String
     var imageUrl: String
+    var quote: String?
     @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
     
     private var accentColor: Color {
@@ -814,9 +815,19 @@ struct CollaboratorRow: View {
                 ProfileImage(url: imageUrl)
                     .frame(width: 40, height: 40)
                 
-                Text(name)
-                    .foregroundColor(.primary)
-                    .fontWeight(.medium)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .foregroundColor(.primary)
+                        .fontWeight(.medium)
+
+                    if let quote = quote {
+                        Text("“\(quote)”")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
                 
                 Spacer()
                 
