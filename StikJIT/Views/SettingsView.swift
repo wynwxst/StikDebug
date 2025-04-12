@@ -459,7 +459,7 @@ struct SettingsView: View {
                     // Advanced Settings Card
                     SettingsCard {
                         VStack(alignment: .leading, spacing: 20) {
-                            Text("Advanced Settings")
+                            Text("Techy Things")
                                 .font(.headline)
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
