@@ -35,8 +35,8 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void) {
                 if httpResponse.statusCode == 200 {
                     print("Response: \(httpResponse.statusCode)")
                     
-                    if let DataString = String(data: data, encoding: .utf8) {
-                        result(DataString)
+                    if let dataString = String(data: data, encoding: .utf8) {
+                        result(dataString)
                     }
                 } else {
                     print("Received non-200 status code: \(httpResponse.statusCode)")
@@ -56,12 +56,117 @@ func UpdateRetrieval() -> Bool {
     var res = false
     httpGet(urlString) { result in
         if let fc = result {
-            if (ver != fc) {
+            if ver != fc {
                 res = true
             }
         }
     }
     return res
+}
+
+class DNSChecker: ObservableObject {
+    @Published var appleIP: String?
+    @Published var controlIP: String?
+    @Published var dnsError: String?
+    
+    func checkDNS() {
+        checkIfConnectedToWifi { [weak self] wifiConnected in
+            guard let self = self else { return }
+            if wifiConnected {
+                let group = DispatchGroup()
+                
+                group.enter()
+                self.lookupIPAddress(for: "gs.apple.com") { ip in
+                    DispatchQueue.main.async {
+                        self.appleIP = ip
+                    }
+                    group.leave()
+                }
+                
+                group.enter()
+                self.lookupIPAddress(for: "google.com") { ip in
+                    DispatchQueue.main.async {
+                        self.controlIP = ip
+                    }
+                    group.leave()
+                }
+                
+                group.notify(queue: DispatchQueue.main) {
+                    if self.controlIP == nil {
+                        self.dnsError = "No internet connection."
+                        print("Control host lookup failed, so no internet connection.")
+                    } else if self.appleIP == nil {
+                        self.dnsError = "Apple DNS blocked. Your network might be filtering Apple traffic."
+                        print("Control lookup succeeded, but Apple lookup failed: likely blocked.")
+                    } else {
+                        self.dnsError = nil
+                        print("DNS lookups succeeded: Apple -> \(self.appleIP!), Control -> \(self.controlIP!)")
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.dnsError = "Not connected to WiFi."
+                    print("Not connected to WiFi; skipping DNS check.")
+                }
+            }
+        }
+    }
+    
+    private func checkIfConnectedToWifi(completion: @escaping (Bool) -> Void) {
+        let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
+        monitor.pathUpdateHandler = { path in
+            if path.status == .satisfied {
+                completion(true)
+            } else {
+                completion(false)
+            }
+            monitor.cancel()
+        }
+        let queue = DispatchQueue.global(qos: .background)
+        monitor.start(queue: queue)
+    }
+    
+    private func lookupIPAddress(for host: String, completion: @escaping (String?) -> Void) {
+        DispatchQueue.global(qos: .background).async {
+            var hints = addrinfo(
+                ai_flags: 0,
+                ai_family: AF_UNSPEC,
+                ai_socktype: SOCK_STREAM,
+                ai_protocol: 0,
+                ai_addrlen: 0,
+                ai_canonname: nil,
+                ai_addr: nil,
+                ai_next: nil
+            )
+            var res: UnsafeMutablePointer<addrinfo>?
+            let err = getaddrinfo(host, nil, &hints, &res)
+            if err != 0 {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+            
+            var ipAddress: String?
+            var ptr = res
+            while ptr != nil {
+                if let addr = ptr?.pointee.ai_addr {
+                    var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    if getnameinfo(addr, ptr!.pointee.ai_addrlen,
+                                   &hostBuffer, socklen_t(hostBuffer.count),
+                                   nil, 0, NI_NUMERICHOST) == 0 {
+                        ipAddress = String(cString: hostBuffer)
+                        break
+                    }
+                }
+                ptr = ptr?.pointee.ai_next
+            }
+            freeaddrinfo(res)
+            DispatchQueue.main.async {
+                completion(ipAddress)
+            }
+        }
+    }
 }
 
 @main
@@ -74,6 +179,7 @@ struct HeartbeatApp: App {
     @State private var alert_string = ""
     @State private var alert_title = ""
     @StateObject private var mount = MountingProgress.shared
+    @StateObject private var dnsChecker = DNSChecker()  // New DNS check state object
     @AppStorage("appTheme") private var appTheme: String = "system"
     @Environment(\.scenePhase) private var scenePhase   // Observe scene lifecycle
     
@@ -97,7 +203,6 @@ struct HeartbeatApp: App {
         let origMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.init(forOpeningContentTypes:asCopy:)))!
         method_exchangeImplementations(origMethod, fixMethod)
         
-        // Apply theme immediately when app launches
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first {
             switch appTheme {
@@ -148,6 +253,8 @@ struct HeartbeatApp: App {
             if isLoading2 {
                 LoadingView()
                     .onAppear {
+                        dnsChecker.checkDNS()
+                        
                         startProxy() { result, error in
                             if result {
                                 checkVPNConnection() { result, vpn_error in
@@ -247,11 +354,17 @@ struct HeartbeatApp: App {
                     )
             }
         }
-        // Monitor scene phase changes; when the app becomes active again, restart the heartbeat.
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 print("App became active – restarting heartbeat")
                 startHeartbeatInBackground()
+            }
+        }
+        .onChange(of: dnsChecker.dnsError) { newError in
+            if let errorMsg = newError {
+                alert_title = "Network Issue"
+                alert_string = errorMsg
+                show_alert = true
             }
         }
     }
