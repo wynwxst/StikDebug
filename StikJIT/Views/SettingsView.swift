@@ -24,7 +24,6 @@ struct SettingsView: View {
     @State private var importProgress: Float = 0.0
     @State private var is_lc = false
     @State private var showColorPickerPopup = false
-    @State private var showingAppIconSheet = false
     
     @StateObject private var mountProg = MountingProgress.shared
     
@@ -115,30 +114,10 @@ struct SettingsView: View {
                                     }
                                 }
                                 .padding(.vertical, 8)
-                                
-                                Button(action: {
-                                    showingAppIconSheet = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "app")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(.primary.opacity(0.8))
-                                        Text("App Icon")
-                                            .foregroundColor(.primary.opacity(0.8))
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(accentColor)
-                                    }
-                                }
-                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
-                    }
-                    .sheet(isPresented: $showingAppIconSheet) {
-                        AppIconView()
                     }
                     
                     SettingsCard {
