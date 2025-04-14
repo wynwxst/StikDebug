@@ -266,7 +266,7 @@ struct HeartbeatApp: App {
                                                     timer.invalidate()
                                                 } else {
                                                     if let error {
-                                                        if error == InvalidHostID.rawValue {
+                                                        if error == -9 {  // InvalidHostID is -9
                                                             isPairing = true
                                                         } else {
                                                             startHeartbeatInBackground()
@@ -522,6 +522,9 @@ func isPairing() -> Bool {
     let err = idevice_pairing_file_read(pairingpath, &pairingFile)
     if err != IdeviceSuccess {
         print("Failed to read pairing file: \(err)")
+        if err.rawValue == -9 {  // InvalidHostID is -9
+            return false
+        }
         return false
     }
     return true
@@ -548,14 +551,38 @@ func startHeartbeatInBackground() {
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 DispatchQueue.main.async {
-                    showAlert(
-                        title: "Heartbeat Error",
-                        message: "Failed to connect to Heartbeat (\(result))",
-                        showOk: false,
-                        showTryAgain: true
-                    ) { shouldTryAgain in
-                        if shouldTryAgain {
-                            startHeartbeatInBackground()
+                    // Special handling for InvalidHostID error (code -9)
+                    if result == -9 {  // InvalidHostID is -9
+                        // Delete the invalid pairing file
+                        do {
+                            try FileManager.default.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                            print("Removed invalid pairing file")
+                        } catch {
+                            print("Error removing invalid pairing file: \(error)")
+                        }
+                        
+                        // Show alert with option to select a new pairing file
+                        showAlert(
+                            title: "Invalid Pairing File",
+                            message: "The pairing file is invalid or expired. Please select a new pairing file.",
+                            showOk: true,
+                            showTryAgain: false,
+                            primaryButtonText: "Select New File"
+                        ) { _ in
+                            // This will be handled by the HomeView's fileImporter
+                            NotificationCenter.default.post(name: NSNotification.Name("ShowPairingFilePicker"), object: nil)
+                        }
+                    } else {
+                        // Handle other errors as before
+                        showAlert(
+                            title: "Heartbeat Error",
+                            message: "Failed to connect to Heartbeat (\(result))",
+                            showOk: false,
+                            showTryAgain: true
+                        ) { shouldTryAgain in
+                            if shouldTryAgain {
+                                startHeartbeatInBackground()
+                            }
                         }
                     }
                 }
@@ -635,7 +662,7 @@ struct LoadingView: View {
     }
 }
 
-public func showAlert(title: String, message: String, showOk: Bool, showTryAgain: Bool = false, completion: @escaping (Bool) -> Void) {
+public func showAlert(title: String, message: String, showOk: Bool, showTryAgain: Bool = false, primaryButtonText: String? = nil, completion: @escaping (Bool) -> Void) {
     DispatchQueue.main.async {
         let rootViewController = UIApplication.shared.windows.last?.rootViewController
         
@@ -648,7 +675,7 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                     completion(false)
                 },
                 showButton: true,
-                primaryButtonText: "Try Again",
+                primaryButtonText: primaryButtonText ?? "Try Again",
                 onPrimaryButtonTap: {
                     completion(true)
                 }
@@ -667,7 +694,7 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                     completion(true)
                 },
                 showButton: true,
-                primaryButtonText: "OK",
+                primaryButtonText: primaryButtonText ?? "OK",
                 onPrimaryButtonTap: {
                     rootViewController?.presentedViewController?.dismiss(animated: true)
                     completion(true)
