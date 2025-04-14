@@ -159,6 +159,15 @@ struct HomeView: View {
             
             // Initialize background color
             refreshBackground()
+            
+            // Add notification observer for showing pairing file picker
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("ShowPairingFilePicker"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                isShowingPairingFilePicker = true
+            }
         }
         .onReceive(timer) { _ in
             refreshBackground()
@@ -268,7 +277,16 @@ struct HomeView: View {
 
     
     private func checkPairingFileExists() {
-        pairingFileExists = FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path)
+        let fileExists = FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path)
+        
+        // If the file exists, check if it's valid
+        if fileExists {
+            // Check if the pairing file is valid
+            let isValid = isPairing()
+            pairingFileExists = isValid
+        } else {
+            pairingFileExists = false
+        }
     }
     
     private func refreshBackground() {
