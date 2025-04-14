@@ -1,3 +1,10 @@
+//
+//  CustomErrorView.swift
+//  StikJIT
+//
+//  Created by neoarz on 3/29/25.
+//
+
 import SwiftUI
 
 struct CustomErrorView: View {

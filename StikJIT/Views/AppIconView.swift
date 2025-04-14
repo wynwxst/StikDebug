@@ -1,3 +1,10 @@
+//
+//  AppIconView.swift
+//  StikJIT
+//
+//  Created by neoarz on 4/12/25.
+//
+
 import SwiftUI
 
 struct AppIconView: View {
