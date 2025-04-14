@@ -646,15 +646,15 @@ struct LoadingView: View {
                 .onAppear {
                     animate = true
                     
-                    // iOS Version Check: if the device is running iOS lower than 17.4,
-                    // set the alert bindings so that the alert is shown.
-                    if #unavailable(iOS 17.4) {
-                        alertTitle = "Unsupported OS Version"
-                        alertMessage = "StikJIT only supports iOS/iPadOS 17.4 and above.\nYou're running an older version."
-                        showAlert = true
-                    }
-                }
-                
+                            let os = ProcessInfo.processInfo.operatingSystemVersion
+                            if os.majorVersion < 17 || (os.majorVersion == 17 && os.minorVersion < 4) {
+                                // Show alert for unsupported host iOS version
+                                alertTitle = "Unsupported OS Version"
+                                alertMessage = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+                                showAlert = true
+                            }
+                        }
+
                 Text("Loading...")
                     .font(.system(size: 20, weight: .medium, design: .rounded))
                     .foregroundColor(isDarkMode ? .white.opacity(0.8) : .black.opacity(0.8))
