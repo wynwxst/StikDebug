@@ -34,7 +34,6 @@ func httpGet(_ urlString: String, result: @escaping (String?) -> Void) {
             if let data = data, let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
                     print("Response: \(httpResponse.statusCode)")
-                    
                     if let dataString = String(data: data, encoding: .utf8) {
                         result(dataString)
                     }
@@ -251,7 +250,8 @@ struct HeartbeatApp: App {
     var body: some Scene {
         WindowGroup {
             if isLoading2 {
-                LoadingView()
+                // Pass bindings to LoadingView for alert handling and version check.
+                LoadingView(showAlert: $show_alert, alertTitle: $alert_title, alertMessage: $alert_string)
                     .onAppear {
                         dnsChecker.checkDNS()
                         
@@ -589,6 +589,10 @@ func startHeartbeatInBackground() {
 }
 
 struct LoadingView: View {
+    @Binding var showAlert: Bool
+    @Binding var alertTitle: String
+    @Binding var alertMessage: String
+    
     @State private var animate = false
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
@@ -641,8 +645,16 @@ struct LoadingView: View {
                 .shadow(color: accentColor.opacity(0.4), radius: 10, x: 0, y: 0)
                 .onAppear {
                     animate = true
-                }
-                
+                    
+                            let os = ProcessInfo.processInfo.operatingSystemVersion
+                            if os.majorVersion < 17 || (os.majorVersion == 17 && os.minorVersion < 4) {
+                                // Show alert for unsupported host iOS version
+                                alertTitle = "Unsupported OS Version"
+                                alertMessage = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+                                showAlert = true
+                            }
+                        }
+
                 Text("Loading...")
                     .font(.system(size: 20, weight: .medium, design: .rounded))
                     .foregroundColor(isDarkMode ? .white.opacity(0.8) : .black.opacity(0.8))
