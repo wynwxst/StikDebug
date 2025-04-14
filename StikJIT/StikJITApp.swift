@@ -540,14 +540,6 @@ func startHeartbeatInBackground() {
                 if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("DDI/Image.dmg.trustcache").path) {
                     MountingProgress.shared.pubMount()
                 }
-                
-                Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                    if !isHeartbeat {
-                        startHeartbeatInBackground()
-                        timer.invalidate()
-                    }
-                }
-                
             } else {
                 print("Error: \(message ?? "") (Code: \(result))")
                 DispatchQueue.main.async {
