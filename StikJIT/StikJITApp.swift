@@ -105,8 +105,8 @@ class DNSChecker: ObservableObject {
                 }
             } else {
                 DispatchQueue.main.async {
-                    self.dnsError = "Not connected to WiFi."
-                    print("Not connected to WiFi; skipping DNS check.")
+                    self.dnsError = nil
+                    print("Not connected to WiFi; continuing without DNS check.")
                 }
             }
         }
@@ -361,7 +361,7 @@ struct HeartbeatApp: App {
             }
         }
         .onChange(of: dnsChecker.dnsError) { newError in
-            if let errorMsg = newError {
+            if let errorMsg = newError, !errorMsg.contains("Not connected to WiFi") {
                 alert_title = "Network Issue"
                 alert_string = errorMsg
                 show_alert = true
