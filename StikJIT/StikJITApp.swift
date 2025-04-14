@@ -213,8 +213,6 @@ struct HeartbeatApp: App {
                 window.overrideUserInterfaceStyle = .unspecified
             }
         }
-        
-        // Removed the version check from here since it now runs inside LoadingView.onAppear.
     }
     
     func newVerCheck() {
