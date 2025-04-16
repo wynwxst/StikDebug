@@ -37,7 +37,7 @@ struct SettingsView: View {
         return marketingVersion
     }
 
-    // Developer profile image URLs 
+    // Developer profile image URLs
     private let developerProfiles: [String: String] = [
         "Stephen": "https://github.com/0-Blu.png",
         "jkcoxson": "https://github.com/jkcoxson.png",
@@ -63,9 +63,8 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    // App Logo and Username Section 
+                    // App Logo and Username Section
                     VStack(spacing: 16) {
-                        // bruh why how did i forget to add this lol
                         VStack {
                             Image("StikJIT")
                                 .resizable()
@@ -120,6 +119,7 @@ struct SettingsView: View {
                         .padding(.horizontal, 16)
                     }
                     
+                    // Behavior section
                     SettingsCard {
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Behavior")
@@ -278,7 +278,7 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, 20)
                         .padding(.horizontal, 16)
-                        .onAppear() {
+                        .onAppear {
                             self.mounted = isMounted()
                         }
                     }
@@ -291,7 +291,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            // Main Developers 
+                            // Main Developers
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Creators")
                                     .font(.subheadline)
@@ -357,13 +357,10 @@ struct SettingsView: View {
                                 
                                 // Vertical stack of collaborators
                                 VStack(spacing: 12) {
-                        
                                     CollaboratorRow(name: "Stossy11", url: "https://github.com/Stossy11", imageUrl: developerProfiles["Stossy11"] ?? "")
                                     CollaboratorRow(name: "Neo", url: "https://neoarz.xyz/", imageUrl: developerProfiles["Neo"] ?? "")
                                     CollaboratorRow(name: "Se2crid", url: "https://github.com/Se2crid", imageUrl: developerProfiles["Se2crid"] ?? "")
-                                    
                                     CollaboratorRow(name: "Huge_Black", url: "https://github.com/HugeBlack", imageUrl: developerProfiles["Huge_Black"] ?? "")
-                                    
                                     CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
                             }
@@ -430,7 +427,46 @@ struct SettingsView: View {
                         DisplayView()
                     }
                     
-                    // Version info should now come after Advanced Settings
+                    // Combined Help Section (User Manual and VPN Help)
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Help")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://example.com/user-manual") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "questionmark.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.primary.opacity(0.8))
+                                    Text("User Manual")
+                                        .foregroundColor(.primary.opacity(0.8))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(accentColor)
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            
+                            HStack(alignment: .center, spacing: 8) {
+                                Image(systemName: "shield.slash")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.primary.opacity(0.8))
+                                Text("You can turn off the VPN in the Settings app.")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 16)
+                    }
+                    
+                    // Version info
                     HStack {
                         Spacer()
                         
@@ -476,7 +512,7 @@ struct SettingsView: View {
                             pairingFileIsValid = false
                         }
                         
-                        // Create timer to update progress 
+                        // Create timer to update progress
                         let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
                             DispatchQueue.main.async {
                                 if importProgress < 1.0 {
@@ -535,7 +571,6 @@ struct SettingsView: View {
     }
 
     private func saveCustomAccentColor(_ color: Color) {
-        // Always save the custom color if we got here (since auto theme mode is disabled)
         customAccentColorHex = color.toHex() ?? ""
     }
 
@@ -643,14 +678,13 @@ struct LinkRow: View {
                 Image(systemName: icon)
                     .font(.system(size: 18))
                     .foregroundColor(accentColor)
-                    .frame(width: 24) // Added fixed width
+                    .frame(width: 24)
             }
         }
         .padding(.vertical, 8)
     }
 }
 
-// Component for 2x2 grid layout of collaborators
 struct CollaboratorGridItem: View {
     var name: String
     var url: String
@@ -723,7 +757,6 @@ struct ProfileImage: View {
     }
 }
 
-// Component for vertical collaborator list - Removed background for cleaner look
 struct CollaboratorRow: View {
     var name: String
     var url: String
@@ -774,26 +807,22 @@ struct CollaboratorRow: View {
     }
 }
 
-// Define these in a separate file if they conflict
 struct ConsoleLogsView_Preview: PreviewProvider {
     static var previews: some View {
         ConsoleLogsView()
     }
 }
 
-// Add this UIViewController before the SettingsView struct
 class FolderViewController: UIViewController {
     func openAppFolder() {
         let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         guard let documentsDirectory = paths.first else { return }
         
-        // Go up one level to get the app's container directory
         let containerPath = (documentsDirectory as NSString).deletingLastPathComponent
         
         if let folderURL = URL(string: "shareddocuments://\(containerPath)") {
             UIApplication.shared.open(folderURL, options: [:]) { success in
                 if !success {
-                    // Fallback to regular URL
                     let regularURL = URL(fileURLWithPath: containerPath)
                     UIApplication.shared.open(regularURL, options: [:], completionHandler: nil)
                 }
