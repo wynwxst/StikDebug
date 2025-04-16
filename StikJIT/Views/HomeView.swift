@@ -30,6 +30,7 @@ struct HomeView: View {
     @State private var showPairingFileMessage = false
     @State private var pairingFileIsValid = false
     @State private var isImportingFile = false
+    @State private var showingConsoleLogsView = false
     @State private var importProgress: Float = 0.0
     
     @State private var viewDidAppeared = false
@@ -52,18 +53,17 @@ struct HomeView: View {
             VStack(spacing: 25) {
                 Spacer()
                 VStack(spacing: 5) {
-                    Text("Welcome to StikJIT \(username)!")
+                    Text("Welcome to StikDebug \(username)!")
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
                     
-                    Text(pairingFileExists ? "Click enable JIT to get started" : "Pick pairing file to get started")
+                    Text(pairingFileExists ? "Click connect to get started" : "Pick pairing file to get started")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 40)
                 
-                // Main action button - changes based on whether we have a pairing file
                 Button(action: {
                     
                     
@@ -86,7 +86,7 @@ struct HomeView: View {
                     HStack {
                         Image(systemName: pairingFileExists ? "bolt.fill" : "doc.badge.plus")
                             .font(.system(size: 20))
-                        Text(pairingFileExists ? "Enable JIT" : "Select Pairing File")
+                        Text(pairingFileExists ? "Connect" : "Select Pairing File")
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.semibold)
                     }
@@ -98,6 +98,28 @@ struct HomeView: View {
                     .shadow(color: accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
                 .padding(.horizontal, 20)
+                
+                Button(action: {
+                    showingConsoleLogsView = true
+                }) {
+                    HStack {
+                        Image(systemName: "apple.terminal")
+                            .font(.system(size: 20))
+                        Text("Open Console")
+                            .font(.system(.title3, design: .rounded))
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(accentColor)
+                    .foregroundColor(accentColor.contrastText())
+                    .cornerRadius(16)
+                    .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .padding(.horizontal, 20)
+                .sheet(isPresented: $showingConsoleLogsView) {
+                    ConsoleLogsView()
+                }
                 
                 // Status message area - keeps layout consistent
                 ZStack {
@@ -298,7 +320,7 @@ struct HomeView: View {
         isProcessing = true
         
         // Add log message
-        LogManager.shared.addInfoLog("Starting JIT for \(bundleID)")
+        LogManager.shared.addInfoLog("Starting Debug for \(bundleID)")
         
         DispatchQueue.global(qos: .background).async {
 
@@ -311,7 +333,7 @@ struct HomeView: View {
             })
             
             DispatchQueue.main.async {
-                LogManager.shared.addInfoLog("JIT process completed for \(bundleID)")
+                LogManager.shared.addInfoLog("Debug process completed for \(bundleID)")
                 isProcessing = false
                 
                 if success && doAutoQuitAfterEnablingJIT {
@@ -335,12 +357,6 @@ class InstalledAppsViewModel: ObservableObject {
         } catch {
             print(error)
             self.apps = [:]
-        }
-        
-        if self.apps.count == 0 && !checkAppEntitlement("get-task-allow") && !UserDefaults.standard.bool(forKey: "skipGetTaskAllowCheck") {
-            showAlert(title: "Warning", message: "StikJIT is not signed with **get-task-allow**. It's OK, but if you also sign the app you want to enable JIT for with the same method, it\n\n ***WILL NOT WORK***.\n\nPlease sign the app you want to enable JIT for using a development certificate. You can disable this alert in settings.", showOk: true) { _ in
-                
-            }
         }
     }
 }

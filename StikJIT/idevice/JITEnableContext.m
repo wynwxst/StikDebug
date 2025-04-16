@@ -13,7 +13,7 @@
 #include "applist.h"
 
 #include "JITEnableContext.h"
-#import "StikJIT-Swift.h"  // This imports the Swift files into Objective-C
+#import "StikDebug-Swift.h"  // This imports the Swift files into Objective-C
 
 JITEnableContext* sharedJITContext = nil;
 

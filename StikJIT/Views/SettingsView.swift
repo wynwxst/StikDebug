@@ -12,7 +12,7 @@ struct SettingsView: View {
     @AppStorage("customAccentColor") private var customAccentColorHex: String = ""
     @AppStorage("selectedAppIcon") private var selectedAppIcon: String = "AppIcon"
     @AppStorage("autoQuitAfterEnablingJIT") private var doAutoQuitAfterEnablingJIT = false
-    @AppStorage("skipGetTaskAllowCheck") private var doSkipGetTaskAllowCheck = false
+    @AppStorage("skipGetTaskAllowCheck") private var doSkipGetTaskAllowCheck = true
     @State private var isShowingPairingFilePicker = false
     @Environment(\.colorScheme) private var colorScheme
 
@@ -79,7 +79,7 @@ struct SettingsView: View {
                         }
                         .padding(.top, 16)
                         
-                        Text("StikJIT")
+                        Text("StikDebug")
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -127,9 +127,6 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                                 .padding(.bottom, 4)
                             
-                            Toggle("Automatically Quit After Enabling JIT", isOn: $doAutoQuitAfterEnablingJIT)
-                                .foregroundColor(.primary)
-                                .padding(.vertical, 6)
                             Toggle("Skip get-task-allow Check", isOn: $doSkipGetTaskAllowCheck)
                                 .foregroundColor(.primary)
                                 .padding(.vertical, 6)
@@ -285,8 +282,6 @@ struct SettingsView: View {
                             self.mounted = isMounted()
                         }
                     }
-
-                    
                     
                     // About section
                     SettingsCard {
@@ -373,46 +368,6 @@ struct SettingsView: View {
                                     
                                     CollaboratorRow(name: "Wynwxst", url: "https://github.com/Wynwxst", imageUrl: developerProfiles["Wynwxst"] ?? "")
                                 }
-                            }
-                        }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 16)
-                    }
-                    .padding(.bottom, 4)
-                    
-                    // NEW SEPARATE LINKS CARD
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Links")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.bottom, 4)
-                            
-                            VStack(spacing: 6) {
-                                // Existing Links
-                                LinkRow(icon: "link", title: "Source Code", url: "https://github.com/0-Blu/StikJIT")
-                                LinkRow(icon: "xmark.shield", title: "Report an Issue", url: "https://github.com/0-Blu/StikJIT/issues")
-                                // New Discord Link
-                                LinkRow(icon: "bubble.left", title: "Join Discord", url: "https://discord.gg/ZnNcrRT3M8")
-                                //autoJIT HomeScreen Edition shortcut link
-                                LinkRow(icon: "sparkles", title: "iOS Shortcut", url: "https://www.icloud.com/shortcuts/1e1b522ea1e045ebb0921d31870d8cb4")
-                                // StikNES promotion
-                                Button(action: {
-                                    if let url = URL(string: "https://apps.apple.com/us/app/stiknes/id6737158545") {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }) {
-                                    HStack(alignment: .center) {
-                                        Text("Like this app? Check out StikNES!")
-                                            .foregroundColor(.secondary)
-                                        Spacer()
-                                        Image(systemName: "gamecontroller")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(accentColor)
-                                            .frame(width: 24)
-                                    }
-                                }
-                                .padding(.vertical, 8)
                             }
                         }
                         .padding(.vertical, 20)

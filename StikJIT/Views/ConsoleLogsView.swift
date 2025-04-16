@@ -246,9 +246,7 @@ struct ConsoleLogsView: View {
                             dismiss()
                         }) {
                             HStack(spacing: 2) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Settings")
+                                Text("Exit")
                                     .fontWeight(.regular)
                             }
                             .foregroundColor(accentColor)
