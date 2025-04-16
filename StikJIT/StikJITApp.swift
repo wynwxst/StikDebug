@@ -8,6 +8,268 @@
 import SwiftUI
 import Network
 import UniformTypeIdentifiers
+import NetworkExtension
+
+// MARK: - Welcome Sheet
+
+struct WelcomeSheetView: View {
+    // A callback to dismiss the sheet and trigger VPN setup.
+    var onDismiss: (() -> Void)?
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Welcome!")
+                .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                .foregroundColor(.primary)
+                .padding(.top)
+            
+            Text("Thanks for installing the app. This brief introduction will help you get started.")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("StikDebug is an on-device debugger designed specifically for self-developed apps. It helps streamline testing and troubleshooting without sending any data to external servers.")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("The next step will prompt you to allow VPN permissions. This is necessary for the app to function properly. The VPN configuration allows your device to securely connect to itself — nothing more. Rest assured, no data is collected or sent externally. Everything stays on your device.")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Text("You might encounter a -17 error after your initial launch. Simply tap 'OK' and the issue will be resolved once a valid pairing file has been imported.")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            
+            Button(action: {
+                onDismiss?()
+            }) {
+                Text("Continue")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.accentColor))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .shadow(radius: 20)
+        )
+        .padding()
+    }
+}
+
+// MARK: - VPN Logger
+
+class VPNLogger: ObservableObject {
+    @Published var logs: [String] = []
+    static var shared = VPNLogger()
+    private init() {}
+    
+    func log(_ message: Any, file: String = #file, function: String = #function, line: Int = #line) {
+        #if DEBUG
+        let fileName = (file as NSString).lastPathComponent
+        print("[\(fileName):\(line)] \(function): \(message)")
+        #endif
+        logs.append("\(message)")
+    }
+}
+
+// MARK: - Tunnel Manager
+
+class TunnelManager: ObservableObject {
+    @Published var tunnelStatus: TunnelStatus = .disconnected
+    static var shared = TunnelManager()
+    
+    private var vpnManager: NETunnelProviderManager?
+    private var tunnelDeviceIp: String {
+        UserDefaults.standard.string(forKey: "TunnelDeviceIP") ?? "10.7.0.0"
+    }
+    private var tunnelFakeIp: String {
+        UserDefaults.standard.string(forKey: "TunnelFakeIP") ?? "10.7.0.1"
+    }
+    private var tunnelSubnetMask: String {
+        UserDefaults.standard.string(forKey: "TunnelSubnetMask") ?? "255.255.255.0"
+    }
+    private var tunnelBundleId: String {
+        Bundle.main.bundleIdentifier!.appending(".TunnelProv")
+    }
+    
+    enum TunnelStatus: String {
+        case disconnected = "Disconnected"
+        case connecting = "Connecting"
+        case connected = "Connected"
+        case disconnecting = "Disconnecting"
+        case error = "Error"
+    }
+    
+    private init() {
+        loadTunnelPreferences()
+        NotificationCenter.default.addObserver(self, selector: #selector(statusDidChange(_:)), name: .NEVPNStatusDidChange, object: nil)
+    }
+    
+    private func loadTunnelPreferences() {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] (managers, error) in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let error = error {
+                    VPNLogger.shared.log("Error loading preferences: \(error.localizedDescription)")
+                    self.tunnelStatus = .error
+                    return
+                }
+                if let managers = managers, !managers.isEmpty {
+                    for manager in managers {
+                        if let proto = manager.protocolConfiguration as? NETunnelProviderProtocol,
+                           proto.providerBundleIdentifier == self.tunnelBundleId {
+                            self.vpnManager = manager
+                            self.updateTunnelStatus(from: manager.connection.status)
+                            VPNLogger.shared.log("Loaded existing tunnel configuration")
+                            break
+                        }
+                    }
+                    if self.vpnManager == nil, let firstManager = managers.first {
+                        self.vpnManager = firstManager
+                        self.updateTunnelStatus(from: firstManager.connection.status)
+                        VPNLogger.shared.log("Using existing tunnel configuration")
+                    }
+                } else {
+                    VPNLogger.shared.log("No existing tunnel configuration found")
+                }
+            }
+        }
+    }
+    
+    @objc private func statusDidChange(_ notification: Notification) {
+        if let connection = notification.object as? NEVPNConnection {
+            updateTunnelStatus(from: connection.status)
+        }
+    }
+    
+    private func updateTunnelStatus(from connectionStatus: NEVPNStatus) {
+        DispatchQueue.main.async {
+            switch connectionStatus {
+            case .invalid, .disconnected:
+                self.tunnelStatus = .disconnected
+            case .connecting:
+                self.tunnelStatus = .connecting
+            case .connected:
+                self.tunnelStatus = .connected
+            case .disconnecting:
+                self.tunnelStatus = .disconnecting
+            case .reasserting:
+                self.tunnelStatus = .connecting
+            @unknown default:
+                self.tunnelStatus = .error
+            }
+            VPNLogger.shared.log("VPN status updated: \(self.tunnelStatus.rawValue)")
+        }
+    }
+    
+    private func createOrUpdateTunnelConfiguration(completion: @escaping (Bool) -> Void) {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] (managers, error) in
+            guard let self = self else { return completion(false) }
+            if let error = error {
+                VPNLogger.shared.log("Error loading preferences: \(error.localizedDescription)")
+                return completion(false)
+            }
+            
+            let manager: NETunnelProviderManager
+            if let existingManagers = managers, !existingManagers.isEmpty {
+                if let matchingManager = existingManagers.first(where: {
+                    ($0.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == self.tunnelBundleId
+                }) {
+                    manager = matchingManager
+                    VPNLogger.shared.log("Updating existing tunnel configuration")
+                } else {
+                    manager = existingManagers[0]
+                    VPNLogger.shared.log("Using first available tunnel configuration")
+                }
+            } else {
+                manager = NETunnelProviderManager()
+                VPNLogger.shared.log("Creating new tunnel configuration")
+            }
+            
+            manager.localizedDescription = "StikDebug"
+            let proto = NETunnelProviderProtocol()
+            proto.providerBundleIdentifier = self.tunnelBundleId
+            proto.serverAddress = "StikDebug's Local Network Tunnel"
+            manager.protocolConfiguration = proto
+            manager.isOnDemandEnabled = true
+            manager.isEnabled = true
+            
+            manager.saveToPreferences { [weak self] error in
+                guard let self = self else { return completion(false) }
+                DispatchQueue.main.async {
+                    if let error = error {
+                        VPNLogger.shared.log("Error saving tunnel configuration: \(error.localizedDescription)")
+                        completion(false)
+                        return
+                    }
+                    self.vpnManager = manager
+                    VPNLogger.shared.log("Tunnel configuration saved successfully")
+                    completion(true)
+                }
+            }
+        }
+    }
+    
+    func startVPN() {
+        if let manager = vpnManager {
+            startExistingVPN(manager: manager)
+        } else {
+            createOrUpdateTunnelConfiguration { [weak self] success in
+                guard let self = self, success else { return }
+                self.loadTunnelPreferences()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if let manager = self.vpnManager {
+                        self.startExistingVPN(manager: manager)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func startExistingVPN(manager: NETunnelProviderManager) {
+        guard tunnelStatus != .connected else {
+            VPNLogger.shared.log("Network tunnel is already connected")
+            return
+        }
+        tunnelStatus = .connecting
+        let options: [String: NSObject] = [
+            "TunnelDeviceIP": tunnelDeviceIp as NSObject,
+            "TunnelFakeIP": tunnelFakeIp as NSObject,
+            "TunnelSubnetMask": tunnelSubnetMask as NSObject
+        ]
+        do {
+            try manager.connection.startVPNTunnel(options: options)
+            VPNLogger.shared.log("Network tunnel start initiated")
+        } catch {
+            tunnelStatus = .error
+            VPNLogger.shared.log("Failed to start tunnel: \(error.localizedDescription)")
+        }
+    }
+    
+    func stopVPN() {
+        guard let manager = vpnManager else { return }
+        tunnelStatus = .disconnecting
+        manager.connection.stopVPNTunnel()
+        VPNLogger.shared.log("Network tunnel stop initiated")
+    }
+}
+
+// MARK: - AccentColor Environment Key
 
 struct AccentColorKey: EnvironmentKey {
     static let defaultValue: Color = .blue
@@ -19,6 +281,8 @@ extension EnvironmentValues {
         set { self[AccentColorKey.self] = newValue }
     }
 }
+
+// MARK: - Helper Functions and Globals
 
 let fileManager = FileManager.default
 
@@ -62,6 +326,8 @@ func UpdateRetrieval() -> Bool {
     }
     return res
 }
+
+// MARK: - DNS Checker
 
 class DNSChecker: ObservableObject {
     @Published var appleIP: String?
@@ -168,8 +434,15 @@ class DNSChecker: ObservableObject {
     }
 }
 
+// MARK: - Main App
+
+// Global state variable for the heartbeat response.
+var pubHeartBeat = false
+
 @main
 struct HeartbeatApp: App {
+    @AppStorage("hasLaunchedBefore") var hasLaunchedBefore: Bool = false
+    @State private var showWelcomeSheet: Bool = false
     @State private var isLoading2 = true
     @State private var isPairing = false
     @State private var heartBeat = false
@@ -249,109 +522,132 @@ struct HeartbeatApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if isLoading2 {
-                // Pass bindings to LoadingView for alert handling and version check.
-                LoadingView(showAlert: $show_alert, alertTitle: $alert_title, alertMessage: $alert_string)
-                    .onAppear {
-                        dnsChecker.checkDNS()
-                        
-                        startProxy() { result, error in
-                            if result {
-                                checkVPNConnection() { result, vpn_error in
-                                    if result {
-                                        if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                                            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                                                if pubHeartBeat {
-                                                    isLoading2 = false
-                                                    timer.invalidate()
-                                                } else {
-                                                    if let error {
-                                                        if error == -9 {  // InvalidHostID is -9
-                                                            isPairing = true
-                                                        } else {
-                                                            startHeartbeatInBackground()
+            Group {
+                if isLoading2 {
+                    LoadingView(showAlert: $show_alert, alertTitle: $alert_title, alertMessage: $alert_string)
+                        .onAppear {
+                            dnsChecker.checkDNS()
+                            
+                            startProxy() { result, error in
+                                if result {
+                                    checkVPNConnection() { result, vpn_error in
+                                        if result {
+                                            if FileManager.default.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                                                Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
+                                                    if pubHeartBeat {
+                                                        isLoading2 = false
+                                                        timer.invalidate()
+                                                    } else {
+                                                        if let error {
+                                                            if error == -9 {  // InvalidHostID is -9
+                                                                isPairing = true
+                                                            } else {
+                                                                startHeartbeatInBackground()
+                                                            }
+                                                            self.error = nil
                                                         }
-                                                        self.error = nil
                                                     }
                                                 }
+                                                startHeartbeatInBackground()
+                                            } else {
+                                                isLoading2 = false
                                             }
-                                            
-                                            startHeartbeatInBackground()
-                                        } else {
-                                            isLoading2 = false
-                                        }
-                                    } else if let vpn_error {
-                                        showAlert(title: "Error", message: "EM Proxy failed to connect: \(vpn_error)", showOk: true) { _ in
-                                            exit(0)
+                                        } else if let vpn_error {
+                                            showAlert(title: "Error", message: "EM Proxy failed to connect: \(vpn_error)", showOk: true) { _ in
+                                                exit(0)
+                                            }
                                         }
                                     }
+                                } else if let error {
+                                    showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { _ in }
                                 }
-                            } else if let error {
-                                showAlert(title: "Error", message: "EM Proxy Failed to start \(error)", showOk: true) { _ in }
                             }
                         }
-                    }
-                    .fileImporter(isPresented: $isPairing, allowedContentTypes: [UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!, .propertyList]) { result in
-                        switch result {
-                        case .success(let url):
+                        .fileImporter(
+                            isPresented: $isPairing,
+                            allowedContentTypes: [
+                                UTType(filenameExtension: "mobiledevicepairing", conformingTo: .data)!,
+                                .propertyList
+                            ]
+                        ) { result in
+                            switch result {
+                            case .success(let url):
+                                let fileManager = FileManager.default
+                                let accessing = url.startAccessingSecurityScopedResource()
+                                
+                                if fileManager.fileExists(atPath: url.path) {
+                                    do {
+                                        if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
+                                            try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                                        }
+                                        try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
+                                        print("File copied successfully!")
+                                        startHeartbeatInBackground()
+                                    } catch {
+                                        print("Error copying file: \(error)")
+                                    }
+                                } else {
+                                    print("Source file does not exist.")
+                                }
+                                
+                                if accessing {
+                                    url.stopAccessingSecurityScopedResource()
+                                }
+                            case .failure(_):
+                                print("Failed")
+                            }
+                        }
+                } else {
+                    MainTabView()
+                        .onAppear {
+                            applyTheme()
                             let fileManager = FileManager.default
-                            let accessing = url.startAccessingSecurityScopedResource()
-                            
-                            if fileManager.fileExists(atPath: url.path) {
-                                do {
-                                    if fileManager.fileExists(atPath: URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path) {
-                                        try fileManager.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
-                                    }
-                                    try fileManager.copyItem(at: url, to: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
-                                    print("File copied successfully!")
-                                    startHeartbeatInBackground()
-                                } catch {
-                                    print("Error copying file: \(error)")
-                                }
-                            } else {
-                                print("Source file does not exist.")
-                            }
-                            
-                            if accessing {
-                                url.stopAccessingSecurityScopedResource()
-                            }
-                        case .failure(_):
-                            print("Failed")
-                        }
-                    }
-            } else {
-                MainTabView()
-                    .onAppear {
-                        applyTheme()
-                        let fileManager = FileManager.default
-                        for (index, urlString) in urls.enumerated() {
-                            let destinationURL = URL.documentsDirectory.appendingPathComponent(outputFiles[index])
-                            if !fileManager.fileExists(atPath: destinationURL.path) {
-                                downloadFile(from: urlString, to: destinationURL) { result in
-                                    if (result != "") {
-                                        alert_title = "An Error has Occurred"
-                                        alert_string = "[Download DDI Error]: " + result
-                                        show_alert = true
+                            for (index, urlString) in urls.enumerated() {
+                                let destinationURL = URL.documentsDirectory.appendingPathComponent(outputFiles[index])
+                                if !fileManager.fileExists(atPath: destinationURL.path) {
+                                    downloadFile(from: urlString, to: destinationURL) { result in
+                                        if (result != "") {
+                                            alert_title = "An Error has Occurred"
+                                            alert_string = "[Download DDI Error]: " + result
+                                            show_alert = true
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    .overlay(
-                        ZStack {
-                            if show_alert {
-                                CustomErrorView(
-                                    title: alert_title,
-                                    message: alert_string,
-                                    onDismiss: {
-                                        show_alert = false
-                                    },
-                                    showButton: true,
-                                    primaryButtonText: "OK"
-                                )
+                        .overlay(
+                            ZStack {
+                                if show_alert {
+                                    CustomErrorView(
+                                        title: alert_title,
+                                        message: alert_string,
+                                        onDismiss: {
+                                            show_alert = false
+                                        },
+                                        showButton: true,
+                                        primaryButtonText: "OK"
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                }
+            }
+            .onAppear {
+                // On first launch, present the welcome sheet.
+                // Otherwise, start the VPN automatically.
+                if !hasLaunchedBefore {
+                    showWelcomeSheet = true
+                } else {
+                    TunnelManager.shared.startVPN()
+                }
+            }
+            .sheet(isPresented: $showWelcomeSheet) {
+                WelcomeSheetView {
+                    // When the user taps "Continue", mark the app as launched and start the VPN.
+                    hasLaunchedBefore = true
+                    showWelcomeSheet = false
+                    TunnelManager.shared.startVPN()
+                }
             }
         }
         .onChange(of: scenePhase) { newPhase in
@@ -436,7 +732,7 @@ struct HeartbeatApp: App {
     }
 }
 
-var pubHeartBeat = false
+// MARK: - Additional Helpers
 
 actor FunctionGuard<T> {
     private var runningTask: Task<T, Never>?
@@ -479,7 +775,6 @@ class MountingProgress: ObservableObject {
     
     private func mount() {
         self.coolisMounted = isMounted()
-        let fileManager = FileManager.default
         let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
         
         if isPairing(), !isMounted() {
@@ -544,8 +839,7 @@ func startHeartbeatInBackground() {
                 print("Error: \(message ?? "") (Code: \(result))")
                 DispatchQueue.main.async {
                     // Special handling for InvalidHostID error (code -9)
-                    if result == -9 {  // InvalidHostID is -9
-                        // Delete the invalid pairing file
+                    if result == -9 {
                         do {
                             try FileManager.default.removeItem(at: URL.documentsDirectory.appendingPathComponent("pairingFile.plist"))
                             print("Removed invalid pairing file")
@@ -553,7 +847,6 @@ func startHeartbeatInBackground() {
                             print("Error removing invalid pairing file: \(error)")
                         }
                         
-                        // Show alert with option to select a new pairing file
                         showAlert(
                             title: "Invalid Pairing File",
                             message: "The pairing file is invalid or expired. Please select a new pairing file.",
@@ -561,11 +854,9 @@ func startHeartbeatInBackground() {
                             showTryAgain: false,
                             primaryButtonText: "Select New File"
                         ) { _ in
-                            // This will be handled by the HomeView's fileImporter
                             NotificationCenter.default.post(name: NSNotification.Name("ShowPairingFilePicker"), object: nil)
                         }
                     } else {
-                        // Handle other errors as before
                         showAlert(
                             title: "Heartbeat Error",
                             message: "Failed to connect to Heartbeat (\(result))",
@@ -645,16 +936,14 @@ struct LoadingView: View {
                 .shadow(color: accentColor.opacity(0.4), radius: 10, x: 0, y: 0)
                 .onAppear {
                     animate = true
-                    
-                            let os = ProcessInfo.processInfo.operatingSystemVersion
-                            if os.majorVersion < 17 || (os.majorVersion == 17 && os.minorVersion < 4) {
-                                // Show alert for unsupported host iOS version
-                                alertTitle = "Unsupported OS Version"
-                                alertMessage = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
-                                showAlert = true
-                            }
-                        }
-
+                    let os = ProcessInfo.processInfo.operatingSystemVersion
+                    if os.majorVersion < 17 || (os.majorVersion == 17 && os.minorVersion < 4) {
+                        alertTitle = "Unsupported OS Version"
+                        alertMessage = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+                        showAlert = true
+                    }
+                }
+                
                 Text("Loading...")
                     .font(.system(size: 20, weight: .medium, design: .rounded))
                     .foregroundColor(isDarkMode ? .white.opacity(0.8) : .black.opacity(0.8))
