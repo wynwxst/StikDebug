@@ -39,7 +39,7 @@ struct SettingsView: View {
 
     // Developer profile image URLs
     private let developerProfiles: [String: String] = [
-        "Stephen": "https://github.com/0-Blu.png",
+        "Stephen": "https://github.com/StephenDev0.png",
         "jkcoxson": "https://github.com/jkcoxson.png",
         "Stossy11": "https://github.com/Stossy11.png",
         "Neo": "https://github.com/neoarz.png",
@@ -311,7 +311,7 @@ struct SettingsView: View {
                                     .background(Color(UIColor.tertiarySystemBackground))
                                     .cornerRadius(12)
                                     .onTapGesture {
-                                        if let url = URL(string: "https://github.com/0-Blu") {
+                                        if let url = URL(string: "https://github.com/StephenDev0") {
                                             UIApplication.shared.open(url)
                                         }
                                     }
@@ -426,7 +426,7 @@ struct SettingsView: View {
                                 .padding(.bottom, 4)
                             
                             Button(action: {
-                                if let url = URL(string: "https://github.com/0-Blu/StikDebug-Guide/blob/main/pairing_file.md") {
+                                if let url = URL(string: "https://github.com/StephenDev0/StikDebug-Guide/blob/main/pairing_file.md") {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
@@ -435,6 +435,22 @@ struct SettingsView: View {
                                         .font(.system(size: 18))
                                         .foregroundColor(.primary.opacity(0.8))
                                     Text("Pairing File Guide")
+                                        .foregroundColor(.primary.opacity(0.8))
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            
+                            Button(action: {
+                                if let url = URL(string: "https://discord.gg/qahjXNTDwS") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "questionmark.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.primary.opacity(0.8))
+                                    Text("Need support? Join the Discord!")
                                         .foregroundColor(.primary.opacity(0.8))
                                     Spacer()
                                 }
