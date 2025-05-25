@@ -90,7 +90,7 @@ struct HomeView: View {
                     HStack {
                         Image(systemName: pairingFileExists ? "cable.connector.horizontal" : "doc.badge.plus")
                             .font(.system(size: 20))
-                        Text(pairingFileExists ? "Connect" : "Select Pairing File")
+                        Text(pairingFileExists ? "Connect by App" : "Select Pairing File")
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.semibold)
                     }
