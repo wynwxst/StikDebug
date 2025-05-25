@@ -827,7 +827,7 @@ func startHeartbeatInBackground() {
                     } else {
                         showAlert(
                             title: "Heartbeat Error",
-                            message: "Failed to connect to Heartbeat (\(result))",
+                            message: "Failed to connect to Heartbeat (\(result)). Are you connected to WiFi or is Airplane Mode enabled? Cellular data isn’t supported. Please launch the app at least once with WiFi enabled. After that, you can switch to cellular data to turn on the VPN, and once the VPN is active you can use Airplane Mode.",
                             showOk: false,
                             showTryAgain: true
                         ) { shouldTryAgain in
