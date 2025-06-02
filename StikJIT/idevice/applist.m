@@ -5,109 +5,90 @@
 //  Created by Stephen on 3/27/25.
 //
 
-#include "idevice.h"
+#import "idevice.h"
 #include <arpa/inet.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-
-#include "applist.h"
+#import "applist.h"
 
 NSDictionary<NSString*, NSString*>* list_installed_apps(TcpProviderHandle* provider, NSString** error) {
-    IdeviceErrorCode err = IdeviceSuccess;
-
     InstallationProxyClientHandle *client = NULL;
-    err = installation_proxy_connect_tcp(provider, &client);
-    if (err != IdeviceSuccess) {
+    if (installation_proxy_connect_tcp(provider, &client) != IdeviceSuccess) {
         *error = @"Failed to connect to installation proxy";
         return nil;
     }
 
     void *apps = NULL;
-    size_t apps_len = 0;
-    err = installation_proxy_get_apps(client, "User", NULL, 0, &apps, &apps_len);
-    if (err != IdeviceSuccess) {
+    size_t count = 0;
+    if (installation_proxy_get_apps(client, "User", NULL, 0, &apps, &count) != IdeviceSuccess) {
         installation_proxy_client_free(client);
         *error = @"Failed to get apps";
         return nil;
     }
 
-    plist_t *app_list = (plist_t *)apps;
-    
-    NSMutableDictionary<NSString*, NSString*>* ans = [[NSMutableDictionary alloc] init];
-    
-    for (size_t i = 0; i < apps_len; i++) {
-        plist_t app = app_list[i];
-        // Check if the app has an "Entitlements" dictionary.
-        plist_t entitlements = plist_dict_get_item(app, "Entitlements");
-        if (entitlements) {
-            // Look for the "get-task-allow" key.
-            plist_t taskAllowNode = plist_dict_get_item(entitlements, "get-task-allow");
-            if (taskAllowNode) {
-                uint8_t isAllowed = 0;
-                plist_get_bool_val(taskAllowNode, &isAllowed);
-                if (isAllowed) {
-                    // Retrieve the bundle identifier if the entitlement is true.
-                    plist_t bundle_id_node = plist_dict_get_item(app, "CFBundleIdentifier");
-                    if (bundle_id_node) {
-                        char *bundle_id = NULL;
-                        plist_get_string_val(bundle_id_node, &bundle_id);
+    NSMutableDictionary<NSString*, NSString*> *result = [NSMutableDictionary dictionaryWithCapacity:count];
 
-                        // Skip if bundle ID is empty
-                        if (bundle_id == NULL || strlen(bundle_id) == 0) {
-                            free(bundle_id);
-                            continue;
-                        }
+    for (size_t i = 0; i < count; i++) {
+        plist_t app = ((plist_t *)apps)[i];
+        plist_t ent = plist_dict_get_item(app, "Entitlements");
+        if (!ent) continue;
 
-                        // Retrieve the app name
-                        plist_t app_name_node = plist_dict_get_item(app, "CFBundleName");
-                        char *app_name = NULL;
-                        if (app_name_node) {
-                            plist_get_string_val(app_name_node, &app_name);
-                        } else {
-                            app_name = strdup("Unknown");
-                        }
+        plist_t tnode = plist_dict_get_item(ent, "get-task-allow");
+        if (!tnode) continue;
 
-                        ans[[NSString stringWithCString:bundle_id encoding:NSASCIIStringEncoding]] = [NSString stringWithCString:app_name encoding:NSASCIIStringEncoding];
+        uint8_t isAllowed = 0;
+        plist_get_bool_val(tnode, &isAllowed);
+        if (!isAllowed) continue;
 
-                        free(bundle_id);
-                        free(app_name);
-                    }
-                }
-            }
+        plist_t bidNode = plist_dict_get_item(app, "CFBundleIdentifier");
+        if (!bidNode) continue;
+
+        char *bidC = NULL;
+        plist_get_string_val(bidNode, &bidC);
+        if (!bidC || bidC[0] == '\0') {
+            free(bidC);
+            continue;
         }
+        NSString *bundleID = [NSString stringWithUTF8String:bidC];
+        free(bidC);
+
+        NSString *appName = @"Unknown";
+        plist_t nameNode = plist_dict_get_item(app, "CFBundleName");
+        if (nameNode) {
+            char *nameC = NULL;
+            plist_get_string_val(nameNode, &nameC);
+            if (nameC && nameC[0] != '\0') {
+                appName = [NSString stringWithUTF8String:nameC];
+            }
+            free(nameC);
+        }
+
+        result[bundleID] = appName;
     }
 
-
     installation_proxy_client_free(client);
-
-    return ans;
+    return result;
 }
 
-
 UIImage* getAppIcon(TcpProviderHandle* provider, NSString* bundleID, NSString** error) {
-    IdeviceErrorCode err = IdeviceSuccess;
-
     SpringBoardServicesClientHandle *client = NULL;
-    springboard_services_connect_tcp(provider, &client);
-    if (err != IdeviceSuccess) {
+    if (springboard_services_connect_tcp(provider, &client) != IdeviceSuccess) {
         *error = @"Failed to connect to SpringBoard Services";
         return nil;
     }
-    
+
     void *pngData = NULL;
-    size_t data_len = 0;
-    err = springboard_services_get_icon(client, [bundleID UTF8String], &pngData, &data_len);
-    if (err != IdeviceSuccess) {
+    size_t dataLen = 0;
+    if (springboard_services_get_icon(client, [bundleID UTF8String], &pngData, &dataLen) != IdeviceSuccess) {
         springboard_services_free(client);
         *error = @"Failed to get app icon";
         return nil;
     }
-    
-    NSData* pngNSData = [NSData dataWithBytes:pngData length:data_len];
+
+    NSData *data = [NSData dataWithBytes:pngData length:dataLen];
     free(pngData);
-    UIImage* ans = [UIImage imageWithData:pngNSData];
-    return ans;
-    
+    UIImage *icon = [UIImage imageWithData:data];
+
+    springboard_services_free(client);
+    return icon;
 }

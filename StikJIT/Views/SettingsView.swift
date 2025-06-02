@@ -264,7 +264,21 @@ struct SettingsView: View {
                             self.mounted = isMounted()
                         }
                     }
-                    
+                    SettingsCard {
+                                           VStack(alignment: .leading, spacing: 20) {
+                                               Text("Behavior")
+                                                   .font(.headline)
+                                                   .foregroundColor(.primary)
+                                                   .padding(.bottom, 4)
+                                               
+                                               Toggle("Automatically Quit After Enabling JIT", isOn: $doAutoQuitAfterEnablingJIT)
+                                                   .foregroundColor(.primary)
+                                                   .padding(.vertical, 6)
+                                           }
+                                           .padding(.vertical, 20)
+                                           .padding(.horizontal, 16)
+                                       }
+                                       
                     // About section
                     SettingsCard {
                         VStack(alignment: .leading, spacing: 20) {

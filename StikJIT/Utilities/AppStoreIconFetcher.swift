@@ -8,31 +8,23 @@
 
 import UIKit
 
-// Not AppStore
-// Uses idevice
 class AppStoreIconFetcher {
-    static private var iconCache: [String: UIImage] = [:]
-    static private let iconFetchDispatchQueue = DispatchQueue(label: "com.stik.StikJIT.iconFetchQueue", attributes: .concurrent)
-    
+    private static var cache = [String: UIImage]()
+    private static let queue = DispatchQueue(label: "com.stik.StikJIT.iconFetchQueue", attributes: .concurrent)
+
     static func getIcon(for bundleID: String, completion: @escaping (UIImage?) -> Void) {
-        // Check cache first
-        if let cachedIcon = iconCache[bundleID] {
-            completion(cachedIcon)
+        if let icon = cache[bundleID] {
+            completion(icon)
             return
         }
-        
-        iconFetchDispatchQueue.async {
-            do {
-                let ans = try JITEnableContext.shared.getAppIcon(withBundleId: bundleID)
-                DispatchQueue.main.async {
-                    iconCache[bundleID] = ans
-                    completion(ans)
+
+        queue.async {
+            let icon = try? JITEnableContext.shared.getAppIcon(withBundleId: bundleID)
+            DispatchQueue.main.async {
+                if let img = icon {
+                    cache[bundleID] = img
                 }
-            } catch {
-                print("Failed to get icon: \(error)")
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
+                completion(icon)
             }
         }
     }

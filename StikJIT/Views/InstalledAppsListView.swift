@@ -28,6 +28,10 @@ struct InstalledAppsListView: View {
     @Environment(\.dismiss) private var dismiss
     var onSelectApp: (String) -> Void
 
+    private var filteredRecents: [String] {
+        recentApps.filter { !favoriteApps.contains($0) }
+    }
+
     var body: some View {
         NavigationView {
             Group {
@@ -47,7 +51,6 @@ struct InstalledAppsListView: View {
         .background(Color(UIColor.systemGroupedBackground).edgesIgnoringSafeArea(.all))
     }
 
-    // MARK: - Empty State
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
@@ -64,11 +67,10 @@ Please check if the app you want to connect to is signed with a **development** 
         .background(Color(UIColor.systemBackground))
     }
 
-    // MARK: - List of Apps
     private var appsList: some View {
         List {
             if !favoriteApps.isEmpty {
-                Section(header: Text("Favorites - (\(favoriteApps.count)/4)")) {
+                Section(header: Text("Favorites (\(favoriteApps.count)/4)")) {
                     ForEach(favoriteApps, id: \.self) { bundleID in
                         AppButton(
                             bundleID: bundleID,
@@ -83,9 +85,9 @@ Please check if the app you want to connect to is signed with a **development** 
                 }
             }
 
-            if !recentApps.isEmpty {
+            if !filteredRecents.isEmpty {
                 Section(header: Text("Recents")) {
-                    ForEach(recentApps, id: \.self) { bundleID in
+                    ForEach(filteredRecents, id: \.self) { bundleID in
                         AppButton(
                             bundleID: bundleID,
                             appName: viewModel.apps[bundleID] ?? bundleID,
@@ -100,7 +102,6 @@ Please check if the app you want to connect to is signed with a **development** 
                                 withAnimation {
                                     recentApps.removeAll { $0 == bundleID }
                                     sharedDefaults.set(recentApps, forKey: "recentApps")
-                                    sharedDefaults.set(favoriteApps, forKey: "favoriteApps")
                                     WidgetCenter.shared.reloadAllTimelines()
                                 }
                             } label: {
@@ -111,7 +112,7 @@ Please check if the app you want to connect to is signed with a **development** 
                 }
             }
 
-            Section(header: Text((favoriteApps.isEmpty && recentApps.isEmpty) ? "" : "All Applications")) {
+            Section(header: Text((favoriteApps.isEmpty && filteredRecents.isEmpty) ? "" : "All Applications")) {
                 ForEach(viewModel.apps.sorted(by: { $0.key < $1.key }), id: \.key) { bundleID, appName in
                     AppButton(
                         bundleID: bundleID,
@@ -168,14 +169,20 @@ struct AppButton: View {
         Group {
             if loadAppIconsOnJIT, let image = appIcons[bundleID] {
                 Image(uiImage: image)
-                    .resizable().aspectRatio(contentMode: .fit)
-                    .frame(width: 60, height: 60).cornerRadius(12)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 60, height: 60)
+                    .cornerRadius(12)
                     .shadow(color: colorScheme == .dark ? .black.opacity(0.2) : .gray.opacity(0.2), radius: 3, x: 0, y: 1)
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(UIColor.systemGray5))
                     .frame(width: 60, height: 60)
-                    .overlay(Image(systemName: "app").font(.system(size: 26)).foregroundColor(.gray))
+                    .overlay(
+                        Image(systemName: "app")
+                            .font(.system(size: 26))
+                            .foregroundColor(.gray)
+                    )
                     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     .onAppear { loadAppIcon(for: bundleID) }
             }
@@ -184,8 +191,13 @@ struct AppButton: View {
 
     private var appText: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(appName).font(.system(size: 18, weight: .semibold)).foregroundColor(.primary)
-            Text(bundleID).font(.system(size: 15)).foregroundColor(.gray).lineLimit(1)
+            Text(appName)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.primary)
+            Text(bundleID)
+                .font(.system(size: 15))
+                .foregroundColor(.gray)
+                .lineLimit(1)
         }
     }
 
@@ -204,6 +216,7 @@ struct AppButton: View {
             favoriteApps.removeAll { $0 == bundleID }
         } else if favoriteApps.count < 4 {
             favoriteApps.insert(bundleID, at: 0)
+            recentApps.removeAll { $0 == bundleID }
         }
         sharedDefaults.set(recentApps, forKey: "recentApps")
         sharedDefaults.set(favoriteApps, forKey: "favoriteApps")
@@ -212,16 +225,38 @@ struct AppButton: View {
 
     private func loadAppIcon(for bundleID: String) {
         guard loadAppIconsOnJIT else { return }
+
+        // 1) Check disk cache first
+        if let cachedImage = loadCachedIcon(bundleID: bundleID) {
+            DispatchQueue.main.async {
+                appIcons[bundleID] = cachedImage
+            }
+            return
+        }
+
+        // 2) Otherwise fetch from network and then cache
         AppStoreIconFetcher.getIcon(for: bundleID) { image in
-            if let image = image {
-                DispatchQueue.main.async {
-                    withAnimation(.easeIn(duration: 0.2)) {
-                        appIcons[bundleID] = image
-                        saveIconToGroup(image, bundleID: bundleID)
-                    }
+            guard let image = image else { return }
+            DispatchQueue.main.async {
+                withAnimation(.easeIn(duration: 0.2)) {
+                    appIcons[bundleID] = image
                 }
             }
+            saveIconToGroup(image, bundleID: bundleID)
         }
+    }
+
+    private func loadCachedIcon(bundleID: String) -> UIImage? {
+        guard
+            let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.stik.sj")
+        else { return nil }
+
+        let iconsDir = containerURL.appendingPathComponent("icons", isDirectory: true)
+        let fileURL = iconsDir.appendingPathComponent("\(bundleID).png")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return UIImage(contentsOfFile: fileURL.path)
+        }
+        return nil
     }
 }
 
@@ -230,6 +265,7 @@ fileprivate func saveIconToGroup(_ image: UIImage, bundleID: String) {
         let data = image.pngData(),
         let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.stik.sj")
     else { return }
+
     let iconsDir = container.appendingPathComponent("icons", isDirectory: true)
     try? FileManager.default.createDirectory(at: iconsDir, withIntermediateDirectories: true)
     let fileURL = iconsDir.appendingPathComponent("\(bundleID).png")
@@ -252,6 +288,7 @@ extension Array: @retroactive RawRepresentable where Element: Codable {
     }
 }
 
+// Preview helper
 #Preview {
     InstalledAppsListView { _ in }
 }
