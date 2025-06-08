@@ -8,9 +8,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// Load announcements from remote JSON
-import Foundation
-
 extension UIDocumentPickerViewController {
     @objc func fix_init(forOpeningContentTypes contentTypes: [UTType], asCopy: Bool) -> UIDocumentPickerViewController {
         return fix_init(forOpeningContentTypes: contentTypes, asCopy: true)
@@ -35,8 +32,6 @@ struct HomeView: View {
     @State private var isImportingFile = false
     @State private var showingConsoleLogsView = false
     @State private var importProgress: Float = 0.0
-
-    @State private var announcements: [Announcement] = []
     
     @State private var pidTextAlertShow = false
     @State private var pidStr = ""
@@ -65,23 +60,14 @@ struct HomeView: View {
                     Text("Welcome to StikDebug \(username)!")
                         .font(.system(.largeTitle, design: .rounded))
                         .fontWeight(.bold)
-
+                    
                     Text(pairingFileExists ? "Click connect to get started" : "Pick pairing file to get started")
                         .font(.system(.subheadline, design: .rounded))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 40)
-
-                if !announcements.isEmpty {
-                    VStack(spacing: 12) {
-                        ForEach(announcements) { announcement in
-                            AnnouncementCard(announcement: announcement)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                }
-
+                
                 Button(action: {
                     
                     
@@ -217,14 +203,10 @@ struct HomeView: View {
             checkPairingFileExists()
             // Don't initialize specific color value when empty - empty means "use system theme"
             // This was causing the toggle to turn off when returning to settings
-
+            
             // Initialize background color
             refreshBackground()
-
-            AnnouncementManager.fetchAnnouncements { loaded in
-                announcements = loaded
-            }
-
+            
             // Add notification observer for showing pairing file picker
             NotificationCenter.default.addObserver(
                 forName: NSNotification.Name("ShowPairingFilePicker"),
