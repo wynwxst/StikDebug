@@ -783,9 +783,9 @@ func isPairing() -> Bool {
     let pairingpath = URL.documentsDirectory.appendingPathComponent("pairingFile.plist").path
     var pairingFile: IdevicePairingFile?
     let err = idevice_pairing_file_read(pairingpath, &pairingFile)
-    if err != IdeviceSuccess {
-        print("Failed to read pairing file: \(err)")
-        if err.rawValue == -9 {  // InvalidHostID is -9
+    if let err {
+        print("Failed to read pairing file: \(err.pointee.code)")
+        if err.pointee.code == -9 {  // InvalidHostID is -9
             return false
         }
         return false
@@ -923,7 +923,7 @@ struct LoadingView: View {
     }
 }
 
-public func showAlert(title: String, message: String, showOk: Bool, showTryAgain: Bool = false, primaryButtonText: String? = nil, messageType: MessageType = .error, completion: @escaping (Bool) -> Void) {
+public func showAlert(title: String, message: String, showOk: Bool, showTryAgain: Bool = false, primaryButtonText: String? = nil, messageType: MessageType = .error, completion: ((Bool) -> Void)? = nil) {
     DispatchQueue.main.async {
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return
@@ -935,12 +935,12 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 message: message,
                 onDismiss: {
                     rootViewController?.presentedViewController?.dismiss(animated: true)
-                    completion(false)
+                    completion?(false)
                 },
                 showButton: true,
                 primaryButtonText: primaryButtonText ?? "Try Again",
                 onPrimaryButtonTap: {
-                    completion(true)
+                    completion?(true)
                 },
                 messageType: messageType
             )
@@ -955,13 +955,13 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 message: message,
                 onDismiss: {
                     rootViewController?.presentedViewController?.dismiss(animated: true)
-                    completion(true)
+                    completion?(true)
                 },
                 showButton: true,
                 primaryButtonText: primaryButtonText ?? "OK",
                 onPrimaryButtonTap: {
                     rootViewController?.presentedViewController?.dismiss(animated: true)
-                    completion(true)
+                    completion?(true)
                 },
                 messageType: messageType
             )
@@ -976,7 +976,7 @@ public func showAlert(title: String, message: String, showOk: Bool, showTryAgain
                 message: message,
                 onDismiss: {
                     rootViewController?.presentedViewController?.dismiss(animated: true)
-                    completion(false)
+                    completion?(false)
                 },
                 showButton: false,
                 messageType: messageType
