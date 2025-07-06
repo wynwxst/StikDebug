@@ -6,20 +6,35 @@
 //
 
 import SwiftUI
+import CodeEditorView
+import LanguageSupport
 
 struct ScriptEditorView: View {
     let scriptURL: URL
+
     @State private var scriptContent: String = ""
+    @State private var position: CodeEditor.Position = .init()
+    @State private var messages: Set<TextLocated<Message>> = []
+
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack {
-            TextEditor(text: $scriptContent)
-                .padding()
-                .border(Color.gray, width: 1)
-                .navigationTitle(scriptURL.lastPathComponent)
-                .navigationBarTitleDisplayMode(.inline)
-                .font(.system(.footnote, design: .monospaced))
+        VStack(spacing: 0) {
+            CodeEditor(
+                text:     $scriptContent,
+                position: $position,
+                messages: $messages,
+                language: .swift()
+            )
+            .font(.system(.footnote, design: .monospaced))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .environment(
+                \.codeEditorTheme,
+                colorScheme == .dark ? Theme.defaultDark : Theme.defaultLight
+            )
+
+            Divider()
 
             HStack {
                 Button("Cancel") {
@@ -37,7 +52,10 @@ struct ScriptEditorView: View {
             }
             .padding()
         }
+        .navigationTitle(scriptURL.lastPathComponent)
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: loadScript)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func loadScript() {
