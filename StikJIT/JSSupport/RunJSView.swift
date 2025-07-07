@@ -8,8 +8,7 @@
 import SwiftUI
 import JavaScriptCore
 
-
-class RunJSViewModel : ObservableObject {
+class RunJSViewModel: ObservableObject {
     var context: JSContext?
     @Published var logs: [String] = []
     @Published var scriptName: String = "Script"
@@ -67,20 +66,26 @@ class RunJSViewModel : ObservableObject {
             self.logs.append("Script Execution Completed.")
         }
     }
-    
 }
 
-struct RunJSView : View {
-    @ObservedObject var model : RunJSViewModel
-    @State var webViewShow = false
-    
+struct RunJSView: View {
+    @ObservedObject var model: RunJSViewModel
+
     var body: some View {
-        List {
-            ForEach(model.logs, id: \.self) { logStr in
-                Text(logStr)
+        ScrollViewReader { proxy in
+            List {
+                ForEach(Array(model.logs.enumerated()), id: \.offset) { index, logStr in
+                    Text(logStr)
+                        .id(index)
+                }
+            }
+            .navigationTitle("Running \(model.scriptName)")
+            .onChange(of: model.logs.count) { newCount in
+                guard newCount > 0 else { return }
+                withAnimation {
+                    proxy.scrollTo(newCount - 1, anchor: .bottom)
+                }
             }
         }
-        .navigationTitle("Running \(model.scriptName)")
     }
-    
 }
