@@ -10,6 +10,14 @@ import Network
 import UniformTypeIdentifiers
 import NetworkExtension
 
+// Register default settings before the app starts
+private func registerAdvancedOptionsDefault() {
+    let os = ProcessInfo.processInfo.operatingSystemVersion
+    // Enable advanced options by default on iOS 19/26 and above
+    let enabled = os.majorVersion >= 19
+    UserDefaults.standard.register(defaults: ["enableAdvancedOptions": enabled])
+}
+
 // MARK: - Welcome Sheet
 
 struct WelcomeSheetView: View {
@@ -461,8 +469,9 @@ struct HeartbeatApp: App {
         "DDI/Image.dmg",
         "DDI/Image.dmg.trustcache"
     ]
-    
+
     init() {
+        registerAdvancedOptionsDefault()
         newVerCheck()
         let fixMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.fix_init(forOpeningContentTypes:asCopy:)))!
         let origMethod = class_getInstanceMethod(UIDocumentPickerViewController.self, #selector(UIDocumentPickerViewController.init(forOpeningContentTypes:asCopy:)))!
