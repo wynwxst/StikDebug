@@ -38,6 +38,7 @@ struct HomeView: View {
     @State private var viewDidAppeared = false
     @State private var pendingBundleIdToEnableJIT : String? = nil
     @State private var pendingPIDToEnableJIT : Int? = nil
+    @AppStorage("enableAdvancedOptions") private var enableAdvancedOptions = false
     
     @AppStorage("useDefaultScript") private var useDefaultScript = false
     @State var scriptViewShow = false
@@ -107,7 +108,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 20)
                 
-                if pairingFileExists {
+                if pairingFileExists && enableAdvancedOptions {
                     Button(action: {
                         pidTextAlertShow = true
                     }) {

@@ -29,3 +29,5 @@
 "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS %@" = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS %@";
 "Cancel" = "Cancel";
 "OK" = "OK";
+
+"Enable Advanced Options" = "Enable Advanced Options";
