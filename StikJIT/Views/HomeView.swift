@@ -78,7 +78,7 @@ struct HomeView: View {
                     if pairingFileExists {
                         // Got a pairing file, show apps
                         if !isMounted() {
-                            showAlert(title: "Device Not Mounted", message: "The Developer Disk Image has not been mounted yet. Check in settings for more information.", showOk: true) { cool in
+                            showAlert(title: "Device Not Mounted".localized, message: "The Developer Disk Image has not been mounted yet. Check in settings for more information.".localized, showOk: true) { cool in
                                 // No Need
                             }
                             return
@@ -327,7 +327,7 @@ struct HomeView: View {
         }
         .textFieldAlert(
             isPresented: $pidTextAlertShow,
-            title: "Please enter the PID of the process you want to connect to",
+            title: "Please enter the PID of the process you want to connect to".localized,
             text: $pidStr,
             placeholder: "",
             action: { newText in
@@ -337,7 +337,7 @@ struct HomeView: View {
                 }
                 
                 guard let pid = Int(pidStr) else {
-                    showAlert(title: "", message: "Invalid PID", showOk: true, completion: { _ in })
+                    showAlert(title: "", message: "Invalid PID".localized, showOk: true, completion: { _ in })
                     return
                 }
                 startJITInBackground(with: pid)
@@ -417,7 +417,7 @@ struct HomeView: View {
                 do {
                     try jsModel?.runScript(path: selectedScriptURL)
                 } catch {
-                    showAlert(title: "Error Occurred While Executing the Default Script.", message: error.localizedDescription, showOk: true)
+                    showAlert(title: "Error Occurred While Executing the Default Script.".localized, message: error.localizedDescription, showOk: true)
                 }
             }
         }
@@ -463,7 +463,7 @@ struct HomeView: View {
             
             DispatchQueue.main.async {
                 LogManager.shared.addInfoLog("JIT process completed for \(pid)")
-                showAlert(title: "Success", message: "JIT has been enabled for pid \(pid).", showOk: true, messageType: .success)
+                showAlert(title: "Success".localized, message: String(format: "JIT has been enabled for pid %d.".localized, pid), showOk: true, messageType: .success)
                 isProcessing = false
             }
         }

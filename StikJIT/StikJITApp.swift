@@ -906,8 +906,8 @@ struct LoadingView: View {
                     animate = true
                     let os = ProcessInfo.processInfo.operatingSystemVersion
                     if os.majorVersion < 17 || (os.majorVersion == 17 && os.minorVersion < 4) {
-                        alertTitle = "Unsupported OS Version"
-                        alertMessage = "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+                        alertTitle = "Unsupported OS Version".localized
+                        alertMessage = String(format: "StikJIT only supports 17.4 and above. Your device is running iOS/iPadOS %@".localized, "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)")
                         showAlert = true
                     }
                 }
