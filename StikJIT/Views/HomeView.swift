@@ -33,6 +33,7 @@ struct HomeView: View {
     @State private var showingConsoleLogsView = false
     @State private var importProgress: Float = 0.0
     
+    
     @State private var pidTextAlertShow = false
     @State private var pidStr = ""
     
@@ -304,7 +305,7 @@ struct HomeView: View {
             }
         }
         .pipify(isPresented: $isProcessing) {
-            RunJSViewPiP(model: $jsModel)
+            RunJSViewPiP(model: $jsModel,isProcessing: $isProcessing)
         }
         .sheet(isPresented: $scriptViewShow) {
             NavigationView {
