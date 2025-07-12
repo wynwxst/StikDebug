@@ -16,6 +16,7 @@ class RunJSViewModel: ObservableObject {
     var pid: Int
     var debugProxy: OpaquePointer?
     var semaphore: dispatch_semaphore_t?
+    var status: Bool = false
     
     init(pid: Int, debugProxy: OpaquePointer?, semaphore: dispatch_semaphore_t?) {
         self.pid = pid
@@ -77,12 +78,14 @@ class RunJSViewModel: ObservableObject {
             
             self.logs.append("Script Execution Completed")
             self.logs.append("You are safe to close the PIP Window.")
+            self.status = true
         }
     }
 }
 
 struct RunJSViewPiP: View {
     @Binding var model: RunJSViewModel?
+    @Binding var isProcessing: Bool
     @State var logs: [String] = []
     let timer = Timer.publish(every: 0.034, on: .main, in: .common).autoconnect()
     
@@ -98,6 +101,12 @@ struct RunJSViewPiP: View {
         .padding()
         .onReceive(timer) { _ in
             self.logs = model?.logs ?? []
+            if let status = model?.status {
+                if status {
+                    isProcessing = false
+                    model = nil
+                }
+            }
         }
         .frame(width: 300, height: 150)
     }
